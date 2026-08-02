@@ -1,5 +1,8 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -14,14 +17,21 @@ import com.vaadin.flow.router.Route;
 @PageTitle("Profil Anda - Lapor Gess")
 public class ProfilView extends Div {
 
-    // ── Modal & overlay references ──
+    private final PenggunaRepository penggunaRepository;
+    private Pengguna currentUser;
     private Div modalOverlay;
 
-    public ProfilView() {
+    public ProfilView(PenggunaRepository penggunaRepository) {
+        this.penggunaRepository = penggunaRepository;
+        
+        String username = SessionManager.getUsername();
+        if (username != null) {
+            currentUser = penggunaRepository.findByUsername(username).orElse(null);
+        }
+
         addClassName("d-root");
         add(buildSidebar(), buildMain());
 
-        // Build and attach modal (hidden by default)
         modalOverlay = buildEditModal();
         add(modalOverlay);
     }
@@ -118,7 +128,8 @@ public class ProfilView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        int poin = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        Span poinTxt = new Span(String.format("%,d Poin", poin));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -131,7 +142,7 @@ public class ProfilView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        av.add(new Span(getInitials()));
 
         right.add(badge, bell, av);
         bar.add(right);
@@ -155,18 +166,19 @@ public class ProfilView extends Div {
         Div infoRow = new Div();
         infoRow.addClassName("pf-info-row");
 
-        // Avatar (large)
         Div avatarWrapper = new Div();
         avatarWrapper.addClassName("pf-avatar-wrapper");
         Div bigAvatar = new Div();
         bigAvatar.addClassName("pf-big-avatar");
-        bigAvatar.add(new Span("B"));
+        bigAvatar.add(new Span(getInitials()));
         avatarWrapper.add(bigAvatar);
 
         Div nameBlock = new Div();
         nameBlock.addClassName("pf-name-block");
-        H2 nameTitle = new H2("Budi Santoso");
+        String name = currentUser != null ? currentUser.getNamaLengkap() : "Pengguna";
+        H2 nameTitle = new H2(name);
         nameTitle.addClassName("pf-name");
+        
         Div locRow = new Div();
         locRow.addClassName("pf-loc-row");
         Div locIcon = new Div();
@@ -175,7 +187,8 @@ public class ProfilView extends Div {
             "<path d=\"M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z\"/>" +
             "<circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>"
         );
-        Span locTxt = new Span("Warga RT 01 / RW 02");
+        String rtRw = (currentUser != null && currentUser.getRtRw() != null) ? currentUser.getRtRw() : "-";
+        Span locTxt = new Span("Warga " + rtRw);
         locTxt.addClassName("pf-loc-txt");
         locRow.add(locIcon, locTxt);
         nameBlock.add(nameTitle, locRow);
@@ -242,6 +255,7 @@ public class ProfilView extends Div {
 
         row.addClickListener(e -> {
             if (isDanger) {
+                SessionManager.logout();
                 getUI().ifPresent(ui -> ui.navigate("login"));
             } else if ("Notifikasi".equalsIgnoreCase(label)) {
                 getUI().ifPresent(ui -> ui.navigate("notifikasi"));
@@ -279,7 +293,8 @@ public class ProfilView extends Div {
         laporanText.addClassName("pf-stat-text");
         Span laporanLabel = new Span("Total Laporan");
         laporanLabel.addClassName("pf-stat-label");
-        Span laporanVal = new Span("24");
+        int laporanCnt = currentUser != null && currentUser.getTotalLaporan() != null ? currentUser.getTotalLaporan() : 0;
+        Span laporanVal = new Span(String.valueOf(laporanCnt));
         laporanVal.addClassNames("pf-stat-value", "pf-stat-value-green");
         laporanText.add(laporanLabel, laporanVal);
         laporanStat.add(laporanIcon, laporanText);
@@ -293,7 +308,8 @@ public class ProfilView extends Div {
         poinText.addClassName("pf-stat-text");
         Span poinLabel = new Span("Total Poin");
         poinLabel.addClassNames("pf-stat-label", "pf-stat-label-orange");
-        Span poinVal = new Span("1.250");
+        int poinCnt = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        Span poinVal = new Span(String.format("%,d", poinCnt));
         poinVal.addClassNames("pf-stat-value", "pf-stat-value-orange");
         poinText.add(poinLabel, poinVal);
         poinStat.add(poinIcon, poinText);
@@ -308,16 +324,13 @@ public class ProfilView extends Div {
     //  EDIT PROFIL MODAL
     // ══════════════════════════════════════════
     private Div buildEditModal() {
-        // ── Overlay (backdrop) ──
         Div overlay = new Div();
         overlay.addClassName("ep-overlay");
         overlay.getElement().setAttribute("id", "ep-overlay");
 
-        // ── Dialog box ──
         Div dialog = new Div();
         dialog.addClassName("ep-dialog");
 
-        // ── Header ──
         Div header = new Div();
         header.addClassName("ep-header");
         Span title = new Span("Edit Profil Anda");
@@ -328,83 +341,64 @@ public class ProfilView extends Div {
         header.add(title, closeBtn);
         dialog.add(header);
 
-        // ── Scrollable content ──
         Div content = new Div();
         content.addClassName("ep-content");
 
-        // ── Photo section ──
         Div photoSection = new Div();
         photoSection.addClassName("ep-photo-section");
-
         Div photoAvatar = new Div();
         photoAvatar.addClassName("ep-photo-avatar");
-        photoAvatar.add(new Span("B"));
-
-        Div photoUploadBtn = new Div();
-        photoUploadBtn.addClassName("ep-photo-upload-icon");
-        photoUploadBtn.getElement().setProperty("innerHTML",
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"white\">" +
-            "<path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v-4H9V8h4v8h-2v2zm1-12c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z\"/></svg>"
-        );
-        photoAvatar.add(photoUploadBtn);
-
+        photoAvatar.add(new Span(getInitials()));
         Div photoInfo = new Div();
         photoInfo.addClassName("ep-photo-info");
         Span photoLabel = new Span("Foto Profil");
         photoLabel.addClassName("ep-photo-label");
         Span photoHint = new Span("Disarankan ukuran 1:1, maksimal 2MB (JPG/PNG).");
         photoHint.addClassName("ep-photo-hint");
-        Span photoUpload = new Span("Unggah Foto Baru");
-        photoUpload.addClassName("ep-photo-upload-link");
-        photoInfo.add(photoLabel, photoHint, photoUpload);
-
+        photoInfo.add(photoLabel, photoHint);
         photoSection.add(photoAvatar, photoInfo);
         content.add(photoSection);
 
-        // ── Divider ──
         content.add(buildModalDivider());
 
-        // ── Field: Nama Lengkap (read-only) ──
+        String name = currentUser != null ? currentUser.getNamaLengkap() : "";
         content.add(buildFieldGroup(
             "Nama Lengkap",
-            buildReadOnlyField("Budi Santoso"),
-            "⚠ Nama lengkap tidak dapat diubah demi keamanan. Hubungi Admin RT jika terdapat kesalahan."
+            buildReadOnlyField(name),
+            "⚠ Nama lengkap tidak dapat diubah demi keamanan."
         ));
 
-        // ── Field: Username ──
         TextField usernameField = new TextField();
-        usernameField.setValue("budis");
+        usernameField.setValue(currentUser != null ? currentUser.getUsername() : "");
         usernameField.setWidthFull();
         usernameField.addClassName("ep-input");
         content.add(buildFieldGroup("Nama Pengguna (Username)", usernameField, null));
 
-        // ── Field: Email ──
         TextField emailField = new TextField();
-        emailField.setValue("budi@example.com");
+        emailField.setValue(currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail() : "");
         emailField.setWidthFull();
         emailField.addClassName("ep-input");
         content.add(buildFieldGroup("Email", emailField, null));
 
-        // ── Field: Telepon ──
         TextField teleponField = new TextField();
-        teleponField.setValue("-");
+        teleponField.setValue(currentUser != null && currentUser.getTelepon() != null ? currentUser.getTelepon() : "");
         teleponField.setWidthFull();
         teleponField.addClassName("ep-input");
         content.add(buildFieldGroup("Nomor Telepon", teleponField, null));
 
-        // ── Two-column row: Jenis Kelamin + Tanggal Lahir ──
         Div twoCol = new Div();
         twoCol.addClassName("ep-two-col");
 
-        Select<String> jenisKelaminSelect = new Select<>();
-        jenisKelaminSelect.setItems("LAKI-LAKI", "PEREMPUAN");
-        jenisKelaminSelect.setValue("LAKI-LAKI");
+        Select<Pengguna.JenisKelamin> jenisKelaminSelect = new Select<>();
+        jenisKelaminSelect.setItems(Pengguna.JenisKelamin.values());
+        if (currentUser != null && currentUser.getJenisKelamin() != null) jenisKelaminSelect.setValue(currentUser.getJenisKelamin());
         jenisKelaminSelect.setWidthFull();
         jenisKelaminSelect.addClassName("ep-input");
         Div jenisKelaminGroup = buildFieldGroup("Jenis Kelamin", jenisKelaminSelect, null);
         jenisKelaminGroup.addClassName("ep-two-col-item");
 
         DatePicker tanggalLahirPicker = new DatePicker();
+        if (currentUser != null && currentUser.getTanggalLahir() != null) tanggalLahirPicker.setValue(currentUser.getTanggalLahir());
         tanggalLahirPicker.setWidthFull();
         tanggalLahirPicker.addClassName("ep-input");
         Div tanggalLahirGroup = buildFieldGroup("Tanggal Lahir", tanggalLahirPicker, null);
@@ -413,26 +407,24 @@ public class ProfilView extends Div {
         twoCol.add(jenisKelaminGroup, tanggalLahirGroup);
         content.add(twoCol);
 
-        // ── Field: Alamat ──
         TextArea alamatArea = new TextArea();
-        alamatArea.setValue("-");
+        alamatArea.setValue(currentUser != null && currentUser.getAlamat() != null ? currentUser.getAlamat() : "");
         alamatArea.setWidthFull();
         alamatArea.addClassName("ep-input");
         content.add(buildFieldGroup("Alamat", alamatArea, null));
 
-        // ── Two-column row: Nomor Rumah + RT/RW ──
         Div twoCol2 = new Div();
         twoCol2.addClassName("ep-two-col");
 
         TextField nomorRumahField = new TextField();
-        nomorRumahField.setValue("-");
+        nomorRumahField.setValue(currentUser != null && currentUser.getNomorRumah() != null ? currentUser.getNomorRumah() : "");
         nomorRumahField.setWidthFull();
         nomorRumahField.addClassName("ep-input");
         Div nomorRumahGroup = buildFieldGroup("Nomor Rumah", nomorRumahField, null);
         nomorRumahGroup.addClassName("ep-two-col-item");
 
         TextField rtRwField = new TextField();
-        rtRwField.setValue("-");
+        rtRwField.setValue(currentUser != null && currentUser.getRtRw() != null ? currentUser.getRtRw() : "");
         rtRwField.setWidthFull();
         rtRwField.addClassName("ep-input");
         Div rtRwGroup = buildFieldGroup("RT / RW", rtRwField, null);
@@ -441,16 +433,14 @@ public class ProfilView extends Div {
         twoCol2.add(nomorRumahGroup, rtRwGroup);
         content.add(twoCol2);
 
-        // ── Field: Kecamatan ──
         TextField kecamatanField = new TextField();
-        kecamatanField.setValue("-");
+        kecamatanField.setValue(currentUser != null && currentUser.getKecamatan() != null ? currentUser.getKecamatan() : "");
         kecamatanField.setWidthFull();
         kecamatanField.addClassName("ep-input");
         content.add(buildFieldGroup("Kecamatan", kecamatanField, null));
 
         dialog.add(content);
 
-        // ── Footer ──
         Div footer = new Div();
         footer.addClassName("ep-footer");
 
@@ -461,10 +451,24 @@ public class ProfilView extends Div {
         NativeButton saveBtn = new NativeButton("Simpan Perubahan");
         saveBtn.addClassName("ep-save-btn");
         saveBtn.addClickListener(e -> {
-            // TODO: Implement actual save logic with PenggunaService
-            Notification notif = new Notification("Profil berhasil diperbarui!", 3000, Notification.Position.BOTTOM_CENTER);
-            notif.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            notif.open();
+            if (currentUser != null) {
+                currentUser.setUsername(usernameField.getValue());
+                currentUser.setEmail(emailField.getValue());
+                currentUser.setTelepon(teleponField.getValue());
+                currentUser.setJenisKelamin(jenisKelaminSelect.getValue());
+                currentUser.setTanggalLahir(tanggalLahirPicker.getValue());
+                currentUser.setAlamat(alamatArea.getValue());
+                currentUser.setNomorRumah(nomorRumahField.getValue());
+                currentUser.setRtRw(rtRwField.getValue());
+                currentUser.setKecamatan(kecamatanField.getValue());
+                penggunaRepository.save(currentUser);
+                
+                Notification notif = new Notification("Profil berhasil diperbarui!", 3000, Notification.Position.BOTTOM_CENTER);
+                notif.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                notif.open();
+                
+                getUI().ifPresent(ui -> ui.getPage().reload());
+            }
             hideModal();
         });
 
@@ -472,18 +476,12 @@ public class ProfilView extends Div {
         dialog.add(footer);
 
         overlay.add(dialog);
-
-        // Close on backdrop click
-        overlay.addClickListener(e -> {
-            // Only close if click is directly on the overlay (backdrop), not the dialog
-            hideModal();
-        });
-        dialog.addClickListener(e -> e.getSource()); // consume click on dialog to prevent bubbling via JS
+        overlay.addClickListener(e -> hideModal());
+        dialog.addClickListener(e -> e.getSource());
 
         return overlay;
     }
 
-    /** Builds a labelled field group with optional helper text. */
     private Div buildFieldGroup(String label, com.vaadin.flow.component.Component input, String helperText) {
         Div group = new Div();
         group.addClassName("ep-field-group");
@@ -502,7 +500,6 @@ public class ProfilView extends Div {
         return group;
     }
 
-    /** Builds a disabled/read-only styled text input. */
     private Div buildReadOnlyField(String value) {
         Div field = new Div();
         field.addClassName("ep-readonly-field");
@@ -524,5 +521,14 @@ public class ProfilView extends Div {
 
     private void hideModal() {
         modalOverlay.removeClassName("ep-overlay-visible");
+    }
+    
+    private String getInitials() {
+        if (currentUser == null || currentUser.getNamaLengkap() == null || currentUser.getNamaLengkap().isEmpty()) return "U";
+        String[] parts = currentUser.getNamaLengkap().trim().split(" ");
+        if (parts.length > 1) {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+        }
+        return currentUser.getNamaLengkap().substring(0, 1).toUpperCase();
     }
 }

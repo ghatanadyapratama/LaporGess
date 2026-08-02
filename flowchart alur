@@ -1,0 +1,105 @@
+# Alur Kerja Aplikasi LaporGess (Dengan Cabang Keputusan)
+
+Dokumen ini berisi flowchart alur kerja terstruktur yang mengalir dari atas ke bawah lengkap dengan cabang keputusan (Iya / Tidak) untuk peran **Warga**, **Petugas**, dan **Admin**.
+
+---
+
+## 1. Alur Kerja Warga (Citizen Workflow)
+
+Alur kerja Warga untuk melapor, memantau laporan, mendapatkan poin, dan menukarkan hadiah.
+
+```mermaid
+graph TD
+    Start([Mulai]) --> Login{Sudah Punya Akun?}
+    
+    %% Alur Registrasi
+    Login -- Tidak --> Register[Registrasi Akun Warga]
+    Register --> PendingVerify[Status Akun: PENDING]
+    PendingVerify --> AdminApprove{Disetujui Admin?}
+    AdminApprove -- Tidak --> RegRejected[Registrasi Ditolak] --> End([Selesai])
+    AdminApprove -- Ya --> LoginPage[Login ke Aplikasi]
+    
+    %% Alur Login
+    Login -- Ya --> LoginPage
+    LoginPage --> Dashboard[Masuk Dasbor Warga]
+    
+    %% Alur Membuat Laporan
+    Dashboard --> CreateReport[Buat Laporan Baru]
+    CreateReport --> Submit[Kirim Laporan status: PENDING]
+    Submit --> AdminReportCheck{Laporan Valid?}
+    AdminReportCheck -- Tidak --> ReportRejected[Laporan DITOLAK &<br>Tampil Alasan Penolakan] --> End
+    AdminReportCheck -- Ya --> ReportAccepted[Laporan Diterima status: DIPROSES]
+    
+    %% Alur Pengerjaan Laporan
+    ReportAccepted --> FixProcess[Petugas Memperbaiki Masalah]
+    FixProcess --> ReportDone[Laporan Diperbaiki status: SELESAI]
+    ReportDone --> AddPoints[Warga Otomatis Dapat +100 Poin]
+    
+    %% Alur Penukaran Hadiah
+    AddPoints --> RedeemGift[Tukar Poin di Toko Hadiah]
+    RedeemGift --> CheckPoints{Apakah Poin Cukup?}
+    CheckPoints -- Tidak --> PoinError[Notifikasi Poin Tidak Cukup] --> RedeemGift
+    CheckPoints -- Ya --> ClaimSuccess[Hadiah Diklaim & Poin Berkurang] --> End
+```
+
+---
+
+## 2. Alur Kerja Petugas Lapangan (Officer Workflow)
+
+Alur kerja Petugas Lapangan untuk memantau tugas patroli, mengambil pekerjaan, dan menyelesaikan laporan.
+
+```mermaid
+graph TD
+    Start([Mulai]) --> Login{Sudah Punya Akun?}
+    
+    %% Alur Registrasi Petugas
+    Login -- Tidak --> Register[Registrasi Akun Petugas<br>Spesialisasi & No. Telepon]
+    Register --> PendingVerify[Status Akun: PENDING]
+    PendingVerify --> AdminApprove{Disetujui Admin?}
+    AdminApprove -- Tidak --> RegRejected[Registrasi Ditolak] --> End([Selesai])
+    AdminApprove -- Ya --> LoginPage[Login ke Aplikasi]
+    
+    %% Alur Login
+    Login -- Ya --> LoginPage
+    LoginPage --> Dashboard[Masuk Dasbor Petugas]
+    
+    %% Alur Menangani Pekerjaan
+    Dashboard --> CheckJobs[Lihat Pekerjaan Tersedia]
+    CheckJobs --> CheckList{Ada Laporan Warga?}
+    CheckList -- Tidak --> WaitJob[Tunggu Laporan Baru / Patroli] --> CheckJobs
+    CheckList -- Ya --> ClaimJob[Ambil Pekerjaan status: DIPROSES]
+    
+    %% Alur Selesaikan Tugas
+    ClaimJob --> DoRepair[Lakukan Perbaikan di Lokasi]
+    DoRepair --> UploadEvidence[Isi Catatan & Upload Foto Bukti Kerja]
+    UploadEvidence --> SubmitDone[Kirim Penyelesaian status: SELESAI]
+    SubmitDone --> End
+```
+
+---
+
+## 3. Alur Kerja Admin (Administrator Workflow)
+
+Alur kerja Admin untuk memverifikasi pendaftaran, memfilter laporan, menugaskan petugas, dan mengatur jadwal shift.
+
+```mermaid
+graph TD
+    Start([Mulai]) --> AdminLogin[Login Admin]
+    AdminLogin --> Dashboard[Masuk Dasbor Admin]
+    
+    %% Alur Verifikasi Akun Baru
+    Dashboard --> CheckReg[Cek Registrasi Baru status PENDING]
+    CheckReg --> IsValidReg{Data Akun Valid?}
+    IsValidReg -- Tidak --> RejectReg[Tolak Registrasi] --> Dashboard
+    IsValidReg -- Ya --> ApproveReg[Setujui Akun status: AKTIF] --> Dashboard
+    
+    %% Alur Kelola Laporan Masuk
+    Dashboard --> CheckReports[Cek Laporan Masuk status PENDING]
+    CheckReports --> IsValidReport{Laporan Valid / Real?}
+    IsValidReport -- Tidak --> RejectReport[Tolak Laporan & Isi Alasan status: DITOLAK] --> Dashboard
+    IsValidReport -- Ya --> AcceptReport[Tugaskan Petugas Lapangan status: DIPROSES] --> Dashboard
+    
+    %% Alur Jadwal Shift
+    Dashboard --> ManageShift[Kelola Jadwal Shift Mingguan Petugas]
+    ManageShift --> SaveShift[Simpan Penempatan Petugas & Zona Patroli] --> End([Selesai])
+```

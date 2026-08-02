@@ -1,5 +1,8 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.notification.Notification;
@@ -11,7 +14,16 @@ import com.vaadin.flow.router.Route;
 @PageTitle("Akun & Sandi - Lapor Gess")
 public class AkunSandiView extends Div {
 
-    public AkunSandiView() {
+    private final PenggunaRepository penggunaRepository;
+    private Pengguna currentUser;
+
+    public AkunSandiView(PenggunaRepository penggunaRepository) {
+        this.penggunaRepository = penggunaRepository;
+        String username = SessionManager.getUsername();
+        if (username != null) {
+            currentUser = penggunaRepository.findByUsername(username).orElse(null);
+        }
+
         addClassName("d-root");
         add(buildSidebar(), buildMain());
     }
@@ -111,7 +123,8 @@ public class AkunSandiView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        int poin = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        Span poinTxt = new Span(String.format("%,d Poin", poin));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -124,7 +137,7 @@ public class AkunSandiView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        av.add(new Span(getInitials()));
 
         right.add(badge, bell, av);
         bar.add(right);
@@ -150,7 +163,8 @@ public class AkunSandiView extends Div {
         fieldsContainer.addClassName("as-fields-container");
 
         // Username (Read-only styled box)
-        fieldsContainer.add(buildFieldGroup("Nama Pengguna (Username)", buildReadOnlyField("budis")));
+        String usernameStr = currentUser != null ? currentUser.getUsername() : "";
+        fieldsContainer.add(buildFieldGroup("Nama Pengguna (Username)", buildReadOnlyField(usernameStr)));
 
         // Current Password Field
         PasswordField currentPwd = new PasswordField();
@@ -196,12 +210,24 @@ public class AkunSandiView extends Div {
                 notif.open();
                 return;
             }
+            
+            if (currentUser != null && !currVal.equals(currentUser.getKataSandi())) {
+                Notification notif = new Notification("Kata sandi saat ini salah!", 3000, Notification.Position.BOTTOM_CENTER);
+                notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                notif.open();
+                return;
+            }
 
             if (!newVal.equals(confVal)) {
                 Notification notif = new Notification("Konfirmasi kata sandi baru tidak cocok!", 3000, Notification.Position.BOTTOM_CENTER);
                 notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 notif.open();
                 return;
+            }
+
+            if (currentUser != null) {
+                currentUser.setKataSandi(newVal);
+                penggunaRepository.save(currentUser);
             }
 
             // Success saving
@@ -243,5 +269,14 @@ public class AkunSandiView extends Div {
         txt.addClassName("as-readonly-text");
         field.add(txt);
         return field;
+    }
+    
+    private String getInitials() {
+        if (currentUser == null || currentUser.getNamaLengkap() == null || currentUser.getNamaLengkap().isEmpty()) return "U";
+        String[] parts = currentUser.getNamaLengkap().trim().split(" ");
+        if (parts.length > 1) {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+        }
+        return currentUser.getNamaLengkap().substring(0, 1).toUpperCase();
     }
 }

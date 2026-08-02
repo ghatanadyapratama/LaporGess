@@ -1,4 +1,4 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;

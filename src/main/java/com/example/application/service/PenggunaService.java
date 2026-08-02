@@ -21,7 +21,12 @@ public class PenggunaService {
             String nik,
             String alamat,
             Pengguna.JenisKelamin jenisKelamin,
-            String password) {
+            String password,
+            String namaLengkap,
+            String rtRw,
+            String telepon,
+            Pengguna.Peran peran,
+            String keahlian) {
 
         if (penggunaRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username sudah terdaftar!");
@@ -33,22 +38,20 @@ public class PenggunaService {
         pengguna.setTanggalLahir(tanggalLahir);
         pengguna.setAlamat(alamat);
         pengguna.setJenisKelamin(jenisKelamin);
-        // Note: For production, please hash the password using a password encoder (like BCrypt).
-        // Since we are connecting directly to XAMPP for this project context, we store it.
         pengguna.setKataSandi(password);
-        pengguna.setPeran(Pengguna.Peran.WARGA);
+        pengguna.setPeran(peran);
         pengguna.setStatus(Pengguna.Status.PENDING);
         pengguna.setPoin(0);
         pengguna.setTotalLaporan(0);
         pengguna.setTotalSelesai(0);
 
-        // Placeholder untuk kolom NOT NULL — dilengkapi nanti di halaman Profil
-        pengguna.setNamaLengkap(username);
+        pengguna.setNamaLengkap(namaLengkap);
         pengguna.setEmail(username + "@laporgess.com");
-        pengguna.setTelepon("-");
+        pengguna.setTelepon(telepon != null && !telepon.isEmpty() ? telepon : "-");
         pengguna.setNomorRumah("-");
-        pengguna.setRtRw("-");
+        pengguna.setRtRw(rtRw != null && !rtRw.isEmpty() ? rtRw : "-");
         pengguna.setKecamatan("-");
+        pengguna.setKeahlian(keahlian);
 
         penggunaRepository.save(pengguna);
     }

@@ -11,7 +11,7 @@ public class Pengguna {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Id")
-    private Long id;
+    private Integer id;
 
     @Column(length = 50)
     private String username;
@@ -79,6 +79,9 @@ public class Pengguna {
     @Column(name = "diperbarui_pada", insertable = false, updatable = false)
     private LocalDateTime diperbaruiPada;
 
+    @Column(length = 100)
+    private String keahlian;
+
     // Enums
     public enum JenisKelamin {
         LAKI_LAKI,
@@ -109,8 +112,8 @@ public class Pengguna {
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
@@ -171,4 +174,7 @@ public class Pengguna {
 
     public LocalDateTime getDibuatPada() { return dibuatPada; }
     public LocalDateTime getDiperbaruiPada() { return diperbaruiPada; }
+
+    public String getKeahlian() { return keahlian; }
+    public void setKeahlian(String keahlian) { this.keahlian = keahlian; }
 }

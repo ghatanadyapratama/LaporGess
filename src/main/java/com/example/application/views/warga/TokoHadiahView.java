@@ -1,14 +1,40 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Hadiah;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.HadiahRepository;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.SessionManager;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.util.List;
 
 @Route(value = "toko-hadiah", layout = BlankLayout.class)
 @PageTitle("Toko Hadiah - Lapor Gess")
 public class TokoHadiahView extends Div {
 
-    public TokoHadiahView() {
+    private final HadiahRepository hadiahRepository;
+    private final PenggunaRepository penggunaRepository;
+    private Pengguna currentUser;
+    private Span bPoints;
+
+    public TokoHadiahView(HadiahRepository hadiahRepository, PenggunaRepository penggunaRepository) {
+        this.hadiahRepository = hadiahRepository;
+        this.penggunaRepository = penggunaRepository;
+        
+        String username = SessionManager.getUsername();
+        if (username != null) {
+            currentUser = penggunaRepository.findByUsername(username).orElse(null);
+        }
+
         addClassName("d-root");
         add(buildSidebar(), buildMain());
     }
@@ -100,7 +126,9 @@ public class TokoHadiahView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        
+        int poin = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        Span poinTxt = new Span(String.format("%,d Poin", poin));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -113,7 +141,7 @@ public class TokoHadiahView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        av.add(new Span(getInitials()));
 
         right.add(badge, bell, av);
         bar.add(right);
@@ -158,7 +186,8 @@ public class TokoHadiahView extends Div {
         );
         trophySvg.addClassName("th-balance-icon");
         
-        Span bPoints = new Span("1.250");
+        int userPoin = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        bPoints = new Span(String.format("%,d", userPoin));
         bPoints.addClassName("th-balance-points");
         
         bPointsWrapper.add(trophySvg, bPoints);
@@ -171,35 +200,116 @@ public class TokoHadiahView extends Div {
         Div grid = new Div();
         grid.addClassName("th-grid");
         
-        grid.add(buildRewardCard("icons/HadiahIjo.png", "Paket Sembako", "1000 poin"));
-        grid.add(buildRewardCard("icons/HadiahOren.png", "Token Listrik Rp 50rb", "800 poin"));
-        grid.add(buildRewardCard("icons/HadiahKuning.png", "Voucher Minimarket", "500 poin"));
+        List<Hadiah> hadiahList = hadiahRepository.findAll();
+        if (hadiahList.isEmpty()) {
+            grid.add(new Span("Belum ada hadiah yang tersedia."));
+        } else {
+            for (Hadiah h : hadiahList) {
+                grid.add(buildRewardCard(h));
+            }
+        }
         
         body.add(grid);
 
         return body;
     }
     
-    private Div buildRewardCard(String iconPath, String title, String points) {
+    private Div buildRewardCard(Hadiah hadiah) {
         Div card = new Div();
         card.addClassName("th-card");
         
         Div iconCircle = new Div();
         iconCircle.addClassName("th-card-icon-circle");
-        Image icon = new Image(iconPath, title);
-        icon.addClassName("th-card-icon");
-        iconCircle.add(icon);
         
-        Span titleSpan = new Span(title);
+        // Use emoji as icon - clean and always visible
+        Span emojiIcon = new Span("🎁");
+        emojiIcon.getStyle().set("font-size", "2.2rem").set("line-height", "1");
+        iconCircle.add(emojiIcon);
+        
+        Span titleSpan = new Span(hadiah.getNama());
         titleSpan.addClassName("th-card-title");
         
-        Span pointsSpan = new Span(points);
+        Span pointsSpan = new Span(String.format("%,d poin", hadiah.getHargaPoin()));
         pointsSpan.addClassName("th-card-points");
         
         NativeButton btn = new NativeButton("Tukar Sekarang");
         btn.addClassName("th-card-btn");
         
+        if (hadiah.getStok() <= 0) {
+            btn.setText("Stok Habis");
+            btn.getStyle().set("background", "#94A3B8").set("cursor", "not-allowed");
+            btn.setEnabled(false);
+        } else {
+            btn.addClickListener(e -> openTukarDialog(hadiah));
+        }
+        
         card.add(iconCircle, titleSpan, pointsSpan, btn);
         return card;
+    }
+
+    private void openTukarDialog(Hadiah hadiah) {
+        if (currentUser == null) return;
+        
+        int userPoin = currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        if (userPoin < hadiah.getHargaPoin()) {
+            Notification n = new Notification("Poin Anda tidak cukup untuk menukar hadiah ini.", 4000, Notification.Position.BOTTOM_CENTER);
+            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            n.open();
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Konfirmasi Penukaran");
+        dialog.setWidth("380px");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setPadding(false);
+        
+        Paragraph msg = new Paragraph("Anda akan menukarkan poin untuk hadiah:");
+        Paragraph namaHadiah = new Paragraph(hadiah.getNama());
+        namaHadiah.getStyle().set("font-weight", "bold").set("font-size", "1.1rem").set("color", "#F97316");
+        Paragraph hargaPoin = new Paragraph("Harga: " + hadiah.getHargaPoin() + " poin");
+        
+        layout.add(msg, namaHadiah, hargaPoin);
+        dialog.add(layout);
+        
+        NativeButton cancelBtn = new NativeButton("Batal");
+        cancelBtn.getStyle().set("padding", "8px 16px").set("border-radius", "8px").set("border", "none").set("cursor", "pointer").set("background", "#F1F5F9");
+        cancelBtn.addClickListener(e -> dialog.close());
+
+        NativeButton okBtn = new NativeButton("Tukar");
+        okBtn.getStyle().set("padding", "8px 16px").set("border-radius", "8px").set("border", "none").set("cursor", "pointer").set("background", "#F97316").set("color", "white").set("font-weight", "bold");
+        
+        okBtn.addClickListener(e -> {
+            currentUser.setPoin(userPoin - hadiah.getHargaPoin());
+            penggunaRepository.save(currentUser);
+            
+            hadiah.setStok(hadiah.getStok() - 1);
+            hadiahRepository.save(hadiah);
+            
+            SessionManager.login(currentUser.getUsername(), currentUser.getPeran().name(), currentUser.getNamaLengkap(), currentUser.getPoin());
+            
+            Notification n = new Notification("Penukaran berhasil! Silakan cek email Anda untuk detail pengiriman.", 5000, Notification.Position.BOTTOM_CENTER);
+            n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            n.open();
+            
+            dialog.close();
+            UI.getCurrent().getPage().reload();
+        });
+
+        HorizontalLayout footer = new HorizontalLayout(cancelBtn, okBtn);
+        footer.setJustifyContentMode(HorizontalLayout.JustifyContentMode.END);
+        dialog.getFooter().add(footer);
+
+        dialog.open();
+    }
+
+    private String getInitials() {
+        if (currentUser == null || currentUser.getNamaLengkap() == null || currentUser.getNamaLengkap().isEmpty()) return "U";
+        String[] parts = currentUser.getNamaLengkap().trim().split(" ");
+        if (parts.length > 1) {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+        }
+        return currentUser.getNamaLengkap().substring(0, 1).toUpperCase();
     }
 }

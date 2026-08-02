@@ -1,14 +1,22 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.util.List;
 
 @Route(value = "peringkat", layout = BlankLayout.class)
 @PageTitle("Peringkat - Lapor Gess")
 public class PeringkatView extends Div {
 
-    public PeringkatView() {
+    private final PenggunaRepository penggunaRepository;
+
+    public PeringkatView(PenggunaRepository penggunaRepository) {
+        this.penggunaRepository = penggunaRepository;
         addClassName("d-root");
         add(buildSidebar(), buildMain());
     }
@@ -95,7 +103,16 @@ public class PeringkatView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        
+        // Fetch real points
+        int userPoin = SessionManager.getPoin();
+        if (SessionManager.getUsername() != null) {
+            Pengguna p = penggunaRepository.findByUsername(SessionManager.getUsername()).orElse(null);
+            if (p != null) {
+                userPoin = p.getPoin() != null ? p.getPoin() : 0;
+            }
+        }
+        Span poinTxt = new Span(String.format("%,d Poin", userPoin));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -108,7 +125,11 @@ public class PeringkatView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        String initials = "U";
+        if (SessionManager.getNama() != null && !SessionManager.getNama().isEmpty()) {
+            initials = SessionManager.getNama().substring(0, 1).toUpperCase();
+        }
+        av.add(new Span(initials));
 
         right.add(badge, bell, av);
         bar.add(right);
@@ -123,7 +144,6 @@ public class PeringkatView extends Div {
         Div hero = new Div();
         hero.addClassName("pr-hero");
 
-        // Trophy SVG icon (matches reference design - orange outline cup)
         Div trophyIcon = new Div();
         trophyIcon.getElement().setProperty("innerHTML",
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"80\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\">" +
@@ -146,6 +166,8 @@ public class PeringkatView extends Div {
         hero.add(trophyIcon, heroTitle, heroSub);
         body.add(hero);
 
+        List<Pengguna> topWarga = penggunaRepository.findByPeranOrderByPoinDesc(Pengguna.Peran.WARGA);
+
         // Podium section
         Div podiumSection = new Div();
         podiumSection.addClassName("pr-podium-section");
@@ -154,16 +176,21 @@ public class PeringkatView extends Div {
         sectionTitle.addClassName("pr-section-title");
         podiumSection.add(sectionTitle);
 
-        // Podium
         Div podium = new Div();
         podium.addClassName("pr-podium");
 
-        // #2 (left)
-        podium.add(buildPodiumCard("2", "Siti Aminah", "980 Poin", "SA", false));
-        // #1 (center, elevated)
-        podium.add(buildPodiumCard("1", "Budi Santoso", "1.250 Poin", "BS", true));
-        // #3 (right)
-        podium.add(buildPodiumCard("3", "Agus Pratama", "720 Poin", "AP", false));
+        if (topWarga.size() > 1) {
+            Pengguna rank2 = topWarga.get(1);
+            podium.add(buildPodiumCard("2", rank2.getNamaLengkap(), String.format("%,d Poin", rank2.getPoin()), getInitials(rank2), false));
+        }
+        if (topWarga.size() > 0) {
+            Pengguna rank1 = topWarga.get(0);
+            podium.add(buildPodiumCard("1", rank1.getNamaLengkap(), String.format("%,d Poin", rank1.getPoin()), getInitials(rank1), true));
+        }
+        if (topWarga.size() > 2) {
+            Pengguna rank3 = topWarga.get(2);
+            podium.add(buildPodiumCard("3", rank3.getNamaLengkap(), String.format("%,d Poin", rank3.getPoin()), getInitials(rank3), false));
+        }
 
         podiumSection.add(podium);
         body.add(podiumSection);
@@ -179,23 +206,39 @@ public class PeringkatView extends Div {
         Div table = new Div();
         table.addClassName("pr-table");
 
-        // Header
         Div header = new Div();
         header.addClassName("pr-table-header");
         header.add(span("Rank", "pr-th"), span("Nama", "pr-th"), span("Poin", "pr-th"), span("Laporan", "pr-th"));
         table.add(header);
 
-        // Rows
-        table.add(tableRow("1", "🥇", "Budi Santoso",  "1.250", "18", true));
-        table.add(tableRow("2", "🥈", "Siti Aminah",   "980",   "15", false));
-        table.add(tableRow("3", "🥉", "Agus Pratama",  "720",   "12", false));
-        table.add(tableRow("4", "4",  "Dewi Lestari",  "650",   "10", false));
-        table.add(tableRow("5", "5",  "Eko Wijaya",    "580",   "9",  false));
+        int max = Math.min(topWarga.size(), 10);
+        String username = SessionManager.getUsername();
+        for (int i = 0; i < max; i++) {
+            Pengguna p = topWarga.get(i);
+            String medal = switch (i) {
+                case 0 -> "🥇";
+                case 1 -> "🥈";
+                case 2 -> "🥉";
+                default -> String.valueOf(i + 1);
+            };
+            boolean isMe = p.getUsername().equals(username);
+            int laporanCnt = p.getTotalSelesai() != null ? p.getTotalSelesai() : 0;
+            table.add(tableRow(String.valueOf(i + 1), medal, p.getNamaLengkap(), String.format("%,d", p.getPoin()), String.valueOf(laporanCnt), isMe));
+        }
 
         tableSection.add(table);
         body.add(tableSection);
 
         return body;
+    }
+
+    private String getInitials(Pengguna p) {
+        if (p.getNamaLengkap() == null || p.getNamaLengkap().isEmpty()) return "U";
+        String[] parts = p.getNamaLengkap().trim().split(" ");
+        if (parts.length > 1) {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+        }
+        return p.getNamaLengkap().substring(0, 1).toUpperCase();
     }
 
     private Div buildPodiumCard(String rank, String name, String poin, String initials, boolean isFirst) {
@@ -239,8 +282,10 @@ public class PeringkatView extends Div {
         nameCell.addClassName("pr-td");
         Div av = new Div();
         av.addClassName("pr-row-av");
-        av.add(new Span(name.substring(0,1)));
-        Span nameSpan = new Span(name);
+        if (name != null && !name.isEmpty()) {
+            av.add(new Span(name.substring(0,1).toUpperCase()));
+        }
+        Span nameSpan = new Span(name != null ? name : "");
         nameSpan.addClassName("pr-row-name");
         nameCell.add(av, nameSpan);
 

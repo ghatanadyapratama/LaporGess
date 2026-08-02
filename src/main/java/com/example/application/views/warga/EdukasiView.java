@@ -1,5 +1,8 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
@@ -11,13 +14,20 @@ import java.util.List;
 @PageTitle("Pusat Edukasi Lingkungan - Lapor Gess")
 public class EdukasiView extends Div {
 
+    private final PenggunaRepository penggunaRepository;
     private Div articlesGrid;
     private Div articleReaderModal;
     private List<Article> articles = new ArrayList<>();
     private String activeCategory = "Semua";
     private String searchQuery = "";
+    private Pengguna currentUser;
 
-    public EdukasiView() {
+    public EdukasiView(PenggunaRepository penggunaRepository) {
+        this.penggunaRepository = penggunaRepository;
+        String username = SessionManager.getUsername();
+        if (username != null) {
+            currentUser = penggunaRepository.findByUsername(username).orElse(null);
+        }
         addClassName("d-root");
         add(buildSidebar(), buildMain());
 
@@ -125,7 +135,8 @@ public class EdukasiView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        int poin = currentUser != null && currentUser.getPoin() != null ? currentUser.getPoin() : 0;
+        Span poinTxt = new Span(String.format("%,d Poin", poin).replace(',', '.'));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -138,7 +149,14 @@ public class EdukasiView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        String initials = "U";
+        if (currentUser != null && currentUser.getNamaLengkap() != null && !currentUser.getNamaLengkap().isEmpty()) {
+            String[] parts = currentUser.getNamaLengkap().trim().split(" ");
+            initials = parts.length > 1
+                ? (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase()
+                : currentUser.getNamaLengkap().substring(0, 1).toUpperCase();
+        }
+        av.add(new Span(initials));
 
         right.add(badge, bell, av);
         bar.add(right);

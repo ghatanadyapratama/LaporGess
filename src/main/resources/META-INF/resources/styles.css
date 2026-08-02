@@ -1312,7 +1312,8 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: #f6f7fa;
+    background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+    border: 2px solid #FED7AA;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2518,14 +2519,12 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     height: 100%;
 }
 
-<<<<<<< HEAD
 .ad-logo {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0 12px 28px 12px;
 }
-=======
 /* ═══════════════════════════════════════════════════════
    ADMIN DASHBOARD STYLES — prefix: a-
    ═══════════════════════════════════════════════════════ */
@@ -3701,17 +3700,14 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     transition: background 0.15s;
 }
 
-.a-btn-reject:hover {
-    background: #fef2f2;
-}
-
->>>>>>> 95c1a299f9ff90e419379ec411258642255f57ec
-
 .ad-logo-img {
     width: 36px;
     height: 36px;
     object-fit: contain;
     border-radius: 8px;
+    background-color: #FFFFFF;
+    padding: 6px;
+    box-sizing: border-box;
 }
 
 .ad-logo-txt {
@@ -4448,9 +4444,9 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
 }
 
 .ad-btn-approve {
-    background-color: #087F6B;
-    color: white;
-    border: none;
+    background-color: #D1FAE5;
+    color: #059669;
+    border: 1px solid #A7F3D0;
     border-radius: 12px;
     padding: 12px 20px;
     font-weight: 700;
@@ -4461,6 +4457,11 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     justify-content: center;
     gap: 8px;
     box-shadow: 0 4px 12px rgba(8, 127, 107, 0.2);
+    transition: all 0.2s ease;
+}
+
+.ad-btn-approve:hover {
+    background-color: #A7F3D0;
 }
 
 .ad-btn-reject {
@@ -4690,3 +4691,878 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
 .ad-notif-action-btn:hover {
     background-color: #E2E8F0 !important;
 }
+
+/* Custom Edit/Add User Dialog Styles */
+.user-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+.user-dialog-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1E293B;
+}
+.user-dialog-close-btn {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #94A3B8;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+.user-dialog-close-btn:hover {
+    color: #475569;
+}
+.user-dialog-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+}
+.user-dialog-avatar-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #E2E8F0;
+    background-color: #F8FAFC;
+    flex-shrink: 0;
+}
+.user-dialog-avatar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.user-dialog-avatar-id {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #475569;
+}
+.user-dialog-avatar-change-link {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #FF5A00; /* Matching dashboard theme orange */
+    cursor: pointer;
+}
+.user-dialog-avatar-change-link:hover {
+    color: #EA580C;
+    text-decoration: underline;
+}
+.user-dialog-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+    width: 100%;
+}
+.user-dialog-input::part(label),
+.user-dialog-combo::part(label) {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+}
+.user-dialog-input::part(input-field),
+.user-dialog-combo::part(input-field) {
+    background-color: #FAFAFA;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 0 4px;
+}
+.user-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    width: 100%;
+}
+.user-dialog-cancel-btn {
+    background: none !important;
+    border: none !important;
+    color: #64748B !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer;
+    padding: 10px 20px !important;
+}
+.user-dialog-cancel-btn:hover {
+    color: #334155 !important;
+}
+.user-dialog-save-btn {
+    background-color: #FF5A00 !important; /* Premium dashboard theme orange */
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 28px !important;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 90, 0, 0.15) !important;
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+.user-dialog-save-btn:hover {
+    background-color: #E04F00 !important;
+    box-shadow: 0 6px 16px rgba(255, 90, 0, 0.25) !important;
+}
+
+/* Petugas Layout Styles */
+.pt-root {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #F8FAFC;
+    font-family: 'Inter', sans-serif;
+}
+.pt-sidebar {
+    width: 260px;
+    background-color: #1A1816; /* Dark background matching figma design */
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    box-sizing: border-box;
+    height: 100%;
+    flex-shrink: 0;
+}
+.pt-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px 20px 12px;
+}
+.pt-logo-box {
+    width: 40px;
+    height: 40px;
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    box-sizing: border-box;
+}
+.pt-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.pt-profile-box {
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px 28px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 24px;
+}
+.pt-profile-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.pt-profile-loc-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: #94A3B8;
+    font-size: 0.82rem;
+}
+.pt-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.pt-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: #94A3B8;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.pt-nav-item:hover {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+.pt-nav-active {
+    background-color: #FF5A00 !important; /* Brand orange */
+    color: #FFFFFF !important;
+}
+.pt-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+.pt-topbar {
+    height: 70px;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+}
+.pt-topbar-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1E293B;
+}
+.pt-notif-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: #FFFFFF;
+    transition: background-color 0.15s;
+}
+.pt-notif-btn:hover {
+    background-color: #F8FAFC;
+}
+.pt-body {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Card Pekerjaan Styles */
+.pt-job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+.pt-job-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    max-width: 380px;
+}
+.pt-card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.pt-job-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1E293B;
+    line-height: 1.3;
+}
+.pt-badge-tinggi {
+    background-color: #FEE2E2;
+    color: #EF4444;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+}
+.pt-job-location-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748B;
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+}
+.pt-card-actions {
+    display: flex;
+    gap: 12px;
+}
+.pt-btn-detail {
+    flex: 1;
+    background-color: #F1F5F9 !important;
+    color: #475569 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    padding: 12px 0 !important;
+    border: none !important;
+    cursor: pointer;
+}
+.pt-btn-ambil {
+    flex: 1.2;
+    background-color: #FF5A00 !important;
+    color: #FFFFFF !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    padding: 12px 0 !important;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(255, 90, 0, 0.15);
+}
+.pt-btn-ambil:hover {
+    background-color: #E04F00 !important;
+}
+
+/* Petugas Detail Page Styles */
+.pt-detail-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: color 0.15s;
+}
+.pt-detail-back-btn:hover {
+    color: #1E293B;
+}
+.pt-detail-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 32px;
+    align-items: start;
+    width: 100%;
+}
+.pt-detail-left-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.pt-detail-image {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+}
+.pt-detail-info-box {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.pt-detail-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0 0 4px 0;
+}
+.pt-detail-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748B;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.pt-detail-info-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    filter: opacity(0.5) grayscale(1);
+}
+.pt-detail-right-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    padding: 40px 32px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.pt-detail-right-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #FFF0E6; /* Soft orange background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+.pt-detail-right-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    filter: invert(41%) sepia(93%) saturate(1900%) hue-rotate(345deg) brightness(98%) contrast(101%); /* Make icon orange */
+}
+.pt-detail-right-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0 0 12px 0;
+}
+.pt-detail-right-desc {
+    font-size: 0.95rem;
+    color: #64748B;
+    line-height: 1.6;
+    margin-bottom: 32px;
+}
+.pt-detail-take-btn {
+    width: 100% !important;
+    background-color: #FF5A00 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    font-size: 0.98rem !important;
+    padding: 14px 0 !important;
+    border-radius: 14px !important;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(255, 90, 0, 0.25) !important;
+    transition: background-color 0.15s, box-shadow 0.15s !important;
+}
+.pt-detail-take-btn:hover {
+    background-color: #E04F00 !important;
+    box-shadow: 0 6px 20px rgba(255, 90, 0, 0.35) !important;
+}
+
+/* Petugas Tugas Saya Styles */
+.pt-badge-aktif {
+    background-color: #FFF0E0;
+    color: #FF7A00;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+}
+.pt-btn-selesaikan {
+    flex: 1.2;
+    background-color: #0D9488 !important; /* Teal green */
+    color: #FFFFFF !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    padding: 12px 0 !important;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.15);
+}
+.pt-btn-selesaikan:hover {
+    background-color: #0F766E !important;
+}
+
+/* Selesaikan Pekerjaan page */
+.pt-upload-area {
+    width: 100%;
+    height: 180px;
+    border: 2px dashed #CBD5E1;
+    border-radius: 16px;
+    background-color: #FAFAFA;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 12px;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+.pt-upload-area:hover {
+    background-color: #F1F5F9;
+    border-color: #94A3B8;
+}
+.pt-upload-icon {
+    font-size: 2.2rem;
+    color: #F97316; /* Orange camera icon color */
+}
+.pt-upload-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #64748B;
+}
+.pt-form-label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+}
+.pt-catatan-textarea::part(input-field) {
+    background-color: #FAFAFA;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+.pt-btn-kirim {
+    width: 100% !important;
+    background-color: #0D9488 !important; /* Teal green */
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    font-size: 0.98rem !important;
+    padding: 14px 0 !important;
+    border-radius: 14px !important;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
+    transition: background-color 0.15s, box-shadow 0.15s !important;
+}
+.pt-btn-kirim:hover {
+    background-color: #0F766E !important;
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35) !important;
+}
+
+/* Completed Job Styles */
+.pt-badge-selesai {
+    background-color: #E6F7F5;
+    color: #0D9488;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+}
+.pt-completed-note-box {
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Petugas Profile Styles */
+.pt-profile-header-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 28px;
+    width: 100%;
+}
+.pt-profile-banner {
+    height: 120px;
+    background-color: #332F2C; /* Dark banner matching screenshot */
+    width: 100%;
+}
+.pt-profile-info-row {
+    padding: 24px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.pt-profile-text-group {
+    display: flex;
+    flex-direction: column;
+}
+.pt-profile-display-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1E293B;
+}
+.pt-profile-display-loc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748B;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-top: 4px;
+}
+.pt-profile-edit-btn {
+    background-color: #F1F5F9 !important;
+    color: #334155 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    padding: 10px 24px !important;
+    border: none !important;
+    cursor: pointer;
+}
+.pt-profile-edit-btn:hover {
+    background-color: #E2E8F0 !important;
+}
+
+/* Settings Column */
+.pt-settings-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.pt-settings-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0 0 20px 0;
+}
+.pt-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid #F1F5F9;
+    cursor: pointer;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.pt-settings-row:last-child {
+    border-bottom: none;
+}
+.pt-settings-row:hover {
+    color: #1E293B;
+}
+.pt-settings-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.pt-settings-icon {
+    font-size: 1.25rem;
+    color: #64748B;
+}
+
+/* Stats Column */
+.pt-stats-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.pt-stats-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0 0 20px 0;
+}
+.pt-stats-row {
+    display: flex;
+    gap: 20px;
+}
+.pt-stat-box {
+    flex: 1;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.pt-stat-box-teal {
+    background-color: #E6F7F5;
+    color: #0D9488;
+}
+.pt-stat-box-orange {
+    background-color: #FFF0E0;
+    color: #FF7A00;
+}
+.pt-stat-box-icon-wrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+.pt-stat-box-info {
+    display: flex;
+    flex-direction: column;
+}
+.pt-stat-box-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748B;
+}
+.pt-stat-box-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   LAPORAN SAYA - LIST CARD STYLES
+═══════════════════════════════════════════════════════════ */
+.ls-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.ls-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 20px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s;
+    cursor: pointer;
+}
+.ls-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+.ls-card-img-box {
+    width: 90px;
+    height: 80px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #F8FAFC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ls-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.ls-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ls-card-top-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.ls-card-judul {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1E293B;
+}
+.ls-card-loc-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: #64748B;
+}
+.ls-card-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.d-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.d-list-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0;
+}
+
+/* Status Badges - Laporan Saya */
+.ls-badge-pending {
+    background: #FEF9EC;
+    color: #B45309;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+}
+.ls-badge-diproses {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+}
+.ls-badge-selesai {
+    background: #E6F7F5;
+    color: #0D9488;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+}
+.ls-badge-ditolak {
+    background: #FEF2F2;
+    color: #DC2626;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+}
+
+/* Admin Laporan Status Badges */
+.ad-status-menunggu {
+    background: #FEF9EC;
+    color: #B45309;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.ad-status-diproses {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.ad-status-selesai {
+    background: #E6F7F5;
+    color: #0D9488;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.ad-status-ditolak {
+    background: #FEF2F2;
+    color: #DC2626;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* Petugas Dashboard Welcome */
+.pt-dashboard-welcome {
+    background: linear-gradient(135deg, #2D2D2D 0%, #1A1A1A 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    color: white;
+}
+.pt-dashboard-welcome h2 {
+    color: white !important;
+}
+

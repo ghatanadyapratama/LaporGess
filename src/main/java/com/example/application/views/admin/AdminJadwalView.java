@@ -1,87 +1,100 @@
 package com.example.application.views.admin;
 
-import com.example.application.views.BlankLayout;
+import com.example.application.model.JadwalShift;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.JadwalShiftRepository;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.views.warga.BlankLayout;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Route(value = "admin/jadwal", layout = BlankLayout.class)
 @PageTitle("Jadwal Petugas - Admin Lapor")
 public class AdminJadwalView extends Div {
 
-    // Officer code → color mapping
-    private static final String[][] OFFICERS = {
-        {"AR", "a-ob-red",    "Arif Rahman"},
-        {"DN", "a-ob-green",  "Dinda Nur"},
-        {"IM", "a-ob-blue",   "Imam Maulana"},
-        {"KS", "a-ob-yellow", "Kevin Saputra"},
-        {"RH", "a-ob-purple", "Rina Hidayati"},
-        {"FT", "a-ob-pink",   "Fitri Aulia"},
-        {"BG", "a-ob-teal",   "Bagas Nugraha"}
-    };
+    private final JadwalShiftRepository jadwalShiftRepository;
+    private final PenggunaRepository penggunaRepository;
+    private Grid<JadwalShift> grid = new Grid<>(JadwalShift.class, false);
 
-    // Schedule data: [timeSlot][zone A-E] = officer index in OFFICERS
-    private static final int[][] SCHEDULE_AM = {
-        {0, 1, 2, 3, 4},  // 06.00 – 08.00
-        {5, 6, 0, 1, 2},  // 08.00 – 10.00
-        {3, 4, 5, 6, 0}   // 10.00 – 12.00
-    };
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    private static final int[][] SCHEDULE_PM = {
-        {1, 2, 3, 4, 5},  // 13.00 – 15.00
-        {6, 0, 1, 2, 3}   // 15.00 – 17.00
-    };
-
-    private static final String[] TIME_AM = {
-        "06.00 – 08.00", "08.00 – 10.00", "10.00 – 12.00"
-    };
-
-    private static final String[] TIME_PM = {
-        "13.00 – 15.00", "15.00 – 17.00"
-    };
-
-    public AdminJadwalView() {
+    public AdminJadwalView(JadwalShiftRepository jadwalShiftRepository, PenggunaRepository penggunaRepository) {
+        this.jadwalShiftRepository = jadwalShiftRepository;
+        this.penggunaRepository = penggunaRepository;
+        
         addClassName("a-root");
-        add(AdminDasborView.buildSidebar("jadwal"), buildMain());
+        add(AdminLayout.buildSidebar("admin/jadwal"), buildMain());
     }
 
     private Div buildMain() {
         Div main = new Div();
         main.addClassName("a-main");
+        main.add(AdminLayout.buildTopbar("Jadwal Petugas Lapangan"));
 
-        // Topbar
-        Div topbar = new Div();
-        topbar.addClassName("a-topbar");
-        Span title = new Span("Jadwal Petugas Lapangan");
-        title.addClassName("a-topbar-title");
-        Div bell = new Div();
-        bell.addClassName("a-bell");
-        bell.add(new Span("🔔"));
-        Div bellDot = new Div();
-        bellDot.addClassName("a-bell-dot");
-        bell.add(bellDot);
-        topbar.add(title, bell);
-        main.add(topbar);
-
-        // Body
         Div body = new Div();
         body.addClassName("a-body");
-        body.add(buildStatsRow());
-        body.add(buildFilterRow());
-        body.add(buildScheduleContent());
+        
+        // Stats
+        Div stats = new Div();
+        stats.addClassName("a-stats-row");
+        long petugasCount = penggunaRepository.findAll().stream().filter(p -> p.getPeran() == Pengguna.Peran.PETUGAS_LAPANGAN).count();
+        long shiftCount = jadwalShiftRepository.count();
+        stats.add(statCard("👥", "a-stat-icon-blue", "Total Petugas", String.valueOf(petugasCount)));
+        stats.add(statCard("📋", "a-stat-icon-orange", "Total Shift", String.valueOf(shiftCount)));
+        body.add(stats);
+
+        // Toolbar
+        HorizontalLayout toolbar = new HorizontalLayout();
+        toolbar.setWidthFull();
+        toolbar.setJustifyContentMode(HorizontalLayout.JustifyContentMode.END);
+        toolbar.setPadding(false);
+        
+        Button btnTambah = new Button("+ Tambah Jadwal Shift", e -> openAddDialog());
+        btnTambah.getStyle().set("background-color", "#10B981").set("color", "white").set("border-radius", "8px").set("font-weight", "600");
+        toolbar.add(btnTambah);
+        body.add(toolbar);
+
+        // Grid
+        grid.addColumn(s -> s.getTanggal() != null ? s.getTanggal().format(DATE_FMT) : "-").setHeader("Tanggal").setSortable(true);
+        grid.addColumn(JadwalShift::getJenisShift).setHeader("Waktu Shift").setSortable(true);
+        grid.addColumn(s -> s.getJamMulai().format(TIME_FMT) + " - " + s.getJamSelesai().format(TIME_FMT)).setHeader("Jam");
+        grid.addColumn(s -> s.getPetugas() != null ? s.getPetugas().getNamaLengkap() : "-").setHeader("Petugas").setSortable(true);
+        grid.addColumn(JadwalShift::getZona).setHeader("Zona / Lokasi");
+        
+        grid.addComponentColumn(s -> {
+            Button delBtn = new Button("Hapus", e -> {
+                jadwalShiftRepository.delete(s);
+                refreshGrid();
+                Notification n = new Notification("Shift dihapus.", 3000, Notification.Position.BOTTOM_CENTER);
+                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                n.open();
+            });
+            delBtn.getStyle().set("color", "#EF4444");
+            return delBtn;
+        }).setHeader("Aksi");
+
+        grid.getStyle().set("margin-top", "20px").set("border-radius", "12px").set("border", "none").set("box-shadow", "0 1px 3px rgba(0,0,0,0.1)");
+        body.add(grid);
+
         main.add(body);
-
+        
+        refreshGrid();
         return main;
-    }
-
-    private Div buildStatsRow() {
-        Div row = new Div();
-        row.addClassName("a-stats-row");
-        row.add(statCard("👥", "a-stat-icon-blue", "Petugas Aktif", "42"));
-        row.add(statCard("📋", "a-stat-icon-orange", "Laporan Hari Ini", "18"));
-        row.add(statCard("⏳", "a-stat-icon-amber", "Laporan Diproses", "5"));
-        row.add(statCard("✅", "a-stat-icon-teal", "Laporan Selesai", "12"));
-        return row;
     }
 
     private Div statCard(String icon, String iconClass, String label, String value) {
@@ -102,135 +115,72 @@ public class AdminJadwalView extends Div {
         return card;
     }
 
-    private Div buildFilterRow() {
-        Div row = new Div();
-        row.addClassName("a-filter-row");
-
-        // Search
-        NativeLabel search = new NativeLabel();
-        search.getElement().setProperty("innerHTML",
-            "<input class='a-search-input' placeholder='Cari kode/nama petugas...' />");
-        row.add(search);
-
-        // Month select
-        NativeLabel monthLabel = new NativeLabel();
-        monthLabel.getElement().setProperty("innerHTML",
-            "<select class='a-select'><option>Juli 2026</option></select>");
-        row.add(monthLabel);
-
-        // Week select
-        NativeLabel weekLabel = new NativeLabel();
-        weekLabel.getElement().setProperty("innerHTML",
-            "<select class='a-select'><option>Minggu 1</option></select>");
-        row.add(weekLabel);
-
-        // Spacer
-        Div spacer = new Div();
-        spacer.addClassName("a-filter-spacer");
-        row.add(spacer);
-
-        // Generate button
-        NativeLabel genBtn = new NativeLabel();
-        genBtn.getElement().setProperty("innerHTML",
-            "<button class='a-btn-outline'>⚙ Generate Otomatis</button>");
-        row.add(genBtn);
-
-        // Edit button
-        NativeLabel editBtn = new NativeLabel();
-        editBtn.getElement().setProperty("innerHTML",
-            "<button class='a-btn-outline'>✏ Edit Jadwal</button>");
-        row.add(editBtn);
-
-        // Simpan button
-        NativeLabel simpanBtn = new NativeLabel();
-        simpanBtn.getElement().setProperty("innerHTML",
-            "<button class='a-btn-teal'>💾 Simpan</button>");
-        row.add(simpanBtn);
-
-        return row;
+    private void refreshGrid() {
+        grid.setItems(jadwalShiftRepository.findAll());
     }
 
-    private Div buildScheduleContent() {
-        Div content = new Div();
-        content.addClassName("a-schedule-content");
-        content.add(buildScheduleTable());
-        content.add(buildOfficerLegend());
-        return content;
-    }
+    private void openAddDialog() {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Tambah Jadwal Shift");
+        dialog.setWidth("400px");
 
-    private Div buildScheduleTable() {
-        Div wrapper = new Div();
-        wrapper.addClassName("a-schedule-table-wrapper");
+        VerticalLayout layout = new VerticalLayout();
+        
+        DatePicker datePicker = new DatePicker("Tanggal");
+        datePicker.setWidthFull();
 
-        StringBuilder html = new StringBuilder();
-        html.append("<table class='a-schedule-table'>");
-        html.append("<thead><tr>");
-        html.append("<th>Jam</th>");
-        html.append("<th>Zona A</th><th>Zona B</th><th>Zona C</th><th>Zona D</th><th>Zona E</th>");
-        html.append("</tr></thead>");
-        html.append("<tbody>");
+        ComboBox<JadwalShift.JenisShift> jenisBox = new ComboBox<>("Jenis Shift");
+        jenisBox.setItems(JadwalShift.JenisShift.values());
+        jenisBox.setWidthFull();
 
-        // AM slots
-        for (int i = 0; i < TIME_AM.length; i++) {
-            html.append("<tr>");
-            html.append("<td>").append(TIME_AM[i]).append("</td>");
-            for (int j = 0; j < 5; j++) {
-                int officerIdx = SCHEDULE_AM[i][j];
-                html.append("<td><span class='a-officer-badge ").append(OFFICERS[officerIdx][1])
-                    .append("'>").append(OFFICERS[officerIdx][0]).append("</span></td>");
+        TimePicker jamMulai = new TimePicker("Jam Mulai");
+        jamMulai.setWidthFull();
+        
+        TimePicker jamSelesai = new TimePicker("Jam Selesai");
+        jamSelesai.setWidthFull();
+
+        ComboBox<Pengguna> petugasBox = new ComboBox<>("Petugas");
+        List<Pengguna> petugasList = penggunaRepository.findAll().stream().filter(p -> p.getPeran() == Pengguna.Peran.PETUGAS_LAPANGAN).toList();
+        petugasBox.setItems(petugasList);
+        petugasBox.setItemLabelGenerator(Pengguna::getNamaLengkap);
+        petugasBox.setWidthFull();
+
+        ComboBox<String> zonaBox = new ComboBox<>("Zona / Lokasi");
+        zonaBox.setItems("Zona A (Pusat)", "Zona B (Utara)", "Zona C (Timur)", "Zona D (Selatan)", "Zona E (Barat)");
+        zonaBox.setWidthFull();
+
+        layout.add(datePicker, jenisBox, jamMulai, jamSelesai, petugasBox, zonaBox);
+        dialog.add(layout);
+
+        Button saveBtn = new Button("Simpan", e -> {
+            if (datePicker.isEmpty() || jenisBox.isEmpty() || jamMulai.isEmpty() || jamSelesai.isEmpty() || petugasBox.isEmpty() || zonaBox.isEmpty()) {
+                Notification n = new Notification("Harap isi semua kolom!", 3000, Notification.Position.TOP_CENTER);
+                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                n.open();
+                return;
             }
-            html.append("</tr>");
-        }
+            JadwalShift shift = new JadwalShift();
+            shift.setTanggal(datePicker.getValue());
+            shift.setJenisShift(jenisBox.getValue());
+            shift.setJamMulai(jamMulai.getValue());
+            shift.setJamSelesai(jamSelesai.getValue());
+            shift.setPetugas(petugasBox.getValue());
+            shift.setZona(zonaBox.getValue());
+            jadwalShiftRepository.save(shift);
+            refreshGrid();
+            dialog.close();
+            Notification n = new Notification("Jadwal shift berhasil ditambahkan!", 3000, Notification.Position.BOTTOM_CENTER);
+            n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            n.open();
+        });
+        saveBtn.addThemeName("primary");
+        
+        Button cancelBtn = new Button("Batal", e -> dialog.close());
 
-        // Break row
-        html.append("<tr class='a-break-row'><td colspan='6'>I S T I R A H A T</td></tr>");
+        HorizontalLayout footer = new HorizontalLayout(cancelBtn, saveBtn);
+        footer.setJustifyContentMode(HorizontalLayout.JustifyContentMode.END);
+        dialog.getFooter().add(footer);
 
-        // PM slots
-        for (int i = 0; i < TIME_PM.length; i++) {
-            html.append("<tr>");
-            html.append("<td>").append(TIME_PM[i]).append("</td>");
-            for (int j = 0; j < 5; j++) {
-                int officerIdx = SCHEDULE_PM[i][j];
-                html.append("<td><span class='a-officer-badge ").append(OFFICERS[officerIdx][1])
-                    .append("'>").append(OFFICERS[officerIdx][0]).append("</span></td>");
-            }
-            html.append("</tr>");
-        }
-
-        html.append("</tbody></table>");
-        wrapper.getElement().setProperty("innerHTML", html.toString());
-
-        return wrapper;
-    }
-
-    private Div buildOfficerLegend() {
-        Div legend = new Div();
-        legend.addClassName("a-officer-legend");
-
-        Span title = new Span("Daftar Kode Petugas");
-        title.addClassName("a-legend-title");
-        legend.add(title);
-
-        Div list = new Div();
-        list.addClassName("a-legend-list");
-
-        for (String[] officer : OFFICERS) {
-            Div entry = new Div();
-            entry.addClassName("a-legend-entry");
-
-            Div code = new Div();
-            code.addClassName("a-legend-code");
-            code.addClassName(officer[1]);
-            code.add(new Span(officer[0]));
-
-            Span name = new Span(officer[2]);
-            name.addClassName("a-legend-name");
-
-            entry.add(code, name);
-            list.add(entry);
-        }
-
-        legend.add(list);
-        return legend;
+        dialog.open();
     }
 }

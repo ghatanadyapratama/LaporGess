@@ -1,11 +1,16 @@
 package com.example.application.views.admin;
 
+import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.*;
 
 public class AdminLayout {
 
     public static Div buildSidebar(String activeRoute) {
+        return buildSidebar(activeRoute, -1, -1, -1);
+    }
+
+    public static Div buildSidebar(String activeRoute, long laporanPending, long penggunaBaru, long verifikasiPending) {
         Div sidebar = new Div();
         sidebar.addClassName("ad-sidebar");
 
@@ -33,18 +38,21 @@ public class AdminLayout {
         jadwalItem.addClickListener(e -> UI.getCurrent().navigate("admin/jadwal-petugas"));
         nav.add(jadwalItem);
 
-        // 3. Laporan (badge: 5)
-        Div laporanItem = createNavItem("icons/laporan.png", "Laporan", "admin/laporan".equals(activeRoute), "5", "ad-nav-badge-orange");
+        // 3. Laporan (badge: laporan PENDING count)
+        String laporanBadge = laporanPending > 0 ? String.valueOf(laporanPending) : null;
+        Div laporanItem = createNavItem("icons/laporan.png", "Laporan", "admin/laporan".equals(activeRoute), laporanBadge, "ad-nav-badge-orange");
         laporanItem.addClickListener(e -> UI.getCurrent().navigate("admin/laporan"));
         nav.add(laporanItem);
 
-        // 4. Pengguna (badge: 2)
-        Div penggunaItem = createNavItem("icons/profile.png", "Pengguna", "admin/pengguna".equals(activeRoute), "2", "ad-nav-badge-orange");
+        // 4. Pengguna (badge: pengguna aktif petugas count)
+        String penggunaBadge = penggunaBaru > 0 ? String.valueOf(penggunaBaru) : null;
+        Div penggunaItem = createNavItem("icons/profile.png", "Pengguna", "admin/pengguna".equals(activeRoute), penggunaBadge, "ad-nav-badge-orange");
         penggunaItem.addClickListener(e -> UI.getCurrent().navigate("admin/pengguna"));
         nav.add(penggunaItem);
 
-        // 5. Verifikasi (badge: 3)
-        Div verifikasiItem = createNavItem("icons/ceklist.png", "Verifikasi", "admin/verifikasi".equals(activeRoute), "3", "ad-nav-badge-red");
+        // 5. Verifikasi (badge: pengguna PENDING count)
+        String verifBadge = verifikasiPending > 0 ? String.valueOf(verifikasiPending) : null;
+        Div verifikasiItem = createNavItem("icons/ceklist.png", "Verifikasi", "admin/verifikasi".equals(activeRoute), verifBadge, "ad-nav-badge-red");
         verifikasiItem.addClickListener(e -> UI.getCurrent().navigate("admin/verifikasi"));
         nav.add(verifikasiItem);
 
@@ -53,12 +61,16 @@ public class AdminLayout {
         // Footer Admin Profile
         Div footer = new Div();
         footer.addClassName("ad-sidebar-footer");
-        Div avatar = new Div(new Span("A"));
+        String adminName = SessionManager.getNama();
+        if (adminName == null || adminName.isEmpty()) {
+            adminName = "Admin Utama";
+        }
+        Div avatar = new Div(new Span(adminName.substring(0, 1).toUpperCase()));
         avatar.addClassName("ad-avatar");
 
         Div userInfo = new Div();
         userInfo.addClassName("ad-user-info");
-        Span userName = new Span("Admin Utama");
+        Span userName = new Span(adminName);
         userName.addClassName("ad-user-name");
         Span userSub = new Span("Kantor Pusat");
         userSub.addClassName("ad-user-sub");
@@ -104,7 +116,10 @@ public class AdminLayout {
         Span title = new Span(titleText);
         title.addClassName("ad-topbar-title");
 
-        // Notification Bell Icon with Popup
+        // Notification Bell — popup hanya muncul saat diklik
+        Div notifWrapper = new Div();
+        notifWrapper.getStyle().set("position", "relative");
+
         Div notifBtn = new Div();
         notifBtn.addClassName("ad-notif-btn");
         Image bellIcon = new Image("icons/bell.png", "Notifikasi");
@@ -113,10 +128,10 @@ public class AdminLayout {
         notifDot.addClassName("ad-notif-dot");
         notifBtn.add(bellIcon, notifDot);
 
-        // Popup message card
+        // Popup — tersembunyi secara default
         Div notifPopup = new Div();
         notifPopup.addClassName("ad-notif-popup");
-        notifPopup.setVisible(true); // Default visible like in screenshot or toggle on click
+        notifPopup.setVisible(false);
 
         Div iconBox = new Div(new Span("🔔"));
         iconBox.addClassName("ad-notif-icon-box");
@@ -138,10 +153,13 @@ public class AdminLayout {
         content.add(titleRow, notifBody);
         notifPopup.add(iconBox, content);
 
-        notifBtn.addClickListener(e -> UI.getCurrent().navigate("admin/notifikasi"));
+        // Toggle popup saat bell diklik
+        notifBtn.addClickListener(e -> notifPopup.setVisible(!notifPopup.isVisible()));
+        // Klik popup → navigasi ke halaman notifikasi
         notifPopup.addClickListener(e -> UI.getCurrent().navigate("admin/notifikasi"));
 
-        topbar.add(title, notifBtn, notifPopup);
+        notifWrapper.add(notifBtn, notifPopup);
+        topbar.add(title, notifWrapper);
 
         return topbar;
     }

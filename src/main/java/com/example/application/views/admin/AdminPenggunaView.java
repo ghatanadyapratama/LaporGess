@@ -1,25 +1,46 @@
 package com.example.application.views.admin;
 
-import com.example.application.views.BlankLayout;
-<<<<<<< HEAD
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.views.warga.BlankLayout;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-=======
-import com.vaadin.flow.component.html.*;
->>>>>>> 95c1a299f9ff90e419379ec411258642255f57ec
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.component.datepicker.DatePicker;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Route(value = "admin/pengguna", layout = BlankLayout.class)
-<<<<<<< HEAD
 @PageTitle("Kelola Pengguna - Lapor Gess")
 public class AdminPenggunaView extends Div {
 
-    public AdminPenggunaView() {
+    private final PenggunaRepository penggunaRepository;
+    private List<Pengguna> users;
+    private Div tableBody;
+    private Span infoText;
+    private TextField searchField;
+    private ComboBox<String> filterPeran;
+    private ComboBox<String> filterStatus;
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
+
+    public AdminPenggunaView(PenggunaRepository penggunaRepository) {
+        this.penggunaRepository = penggunaRepository;
         addClassName("ad-root");
 
-        Div sidebar = AdminLayout.buildSidebar("admin/pengguna");
+        long petugasAktif = penggunaRepository.countByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.PETUGAS_LAPANGAN);
+        long verifikasiPending = penggunaRepository.countByStatus(Pengguna.Status.PENDING);
+        Div sidebar = AdminLayout.buildSidebar("admin/pengguna", 0, petugasAktif, verifikasiPending);
 
         Div main = new Div();
         main.addClassName("ad-main");
@@ -33,330 +54,349 @@ public class AdminPenggunaView extends Div {
         Div card = new Div();
         card.addClassName("ad-card");
 
-        // Controls
+        // ── Controls Bar ──────────────────────────────
         Div controls = new Div();
-        controls.getStyle().set("display", "flex").set("align-items", "center").set("gap", "16px").set("margin-bottom", "20px");
+        controls.getStyle()
+            .set("display", "flex").set("align-items", "center")
+            .set("gap", "12px").set("margin-bottom", "20px")
+            .set("flex-wrap", "wrap");
 
-        TextField search = new TextField();
-        search.setPlaceholder("Cari pengguna...");
-        search.getStyle().set("width", "260px");
+        searchField = new TextField();
+        searchField.setPlaceholder("Cari nama/username...");
+        searchField.getStyle().set("width", "240px");
+        searchField.addValueChangeListener(e -> loadDataAndRefresh());
 
-        ComboBox<String> filterPeran = new ComboBox<>();
-        filterPeran.setItems("Semua Peran", "Warga", "Petugas", "Admin");
+        filterPeran = new ComboBox<>();
+        filterPeran.setItems("Semua Peran", "WARGA", "PETUGAS_LAPANGAN", "ADMIN");
         filterPeran.setValue("Semua Peran");
-        filterPeran.getStyle().set("width", "150px");
+        filterPeran.getStyle().set("width", "145px");
+        filterPeran.addValueChangeListener(e -> loadDataAndRefresh());
 
-        ComboBox<String> filterStatus = new ComboBox<>();
-        filterStatus.setItems("Semua Status", "Aktif", "Pending", "Non-aktif");
+        filterStatus = new ComboBox<>();
+        filterStatus.setItems("Semua Status", "AKTIF", "PENDING", "NONAKTIF");
         filterStatus.setValue("Semua Status");
-        filterStatus.getStyle().set("width", "150px");
+        filterStatus.getStyle().set("width", "145px");
+        filterStatus.addValueChangeListener(e -> loadDataAndRefresh());
 
-        controls.add(search, filterPeran, filterStatus);
+        // Tambah button
+        Button btnTambah = new Button("+ Tambah Pengguna");
+        btnTambah.addClassName("ad-btn-primary-green");
+        btnTambah.getStyle().set("margin-left", "auto");
+        btnTambah.addClickListener(e -> openAddDialog());
+
+        controls.add(searchField, filterPeran, filterStatus, btnTambah);
         card.add(controls);
 
-        // Table
-        Table table = new Table();
-        table.addClassName("ad-table");
+        // ── Table Header ──────────────────────────────
+        Div tableWrapper = new Div();
+        tableWrapper.getStyle().set("overflow-x", "auto");
 
-        Thead thead = new Thead();
-        Tr headerRow = new Tr();
-        headerRow.add(
-            new Th("Data Pengguna"),
-            new Th("ID Pengguna"),
-            new Th("Peran"),
-            new Th("Area / Lokasi"),
-            new Th("Tanggal Lahir"),
-            new Th("Jenis Kelamin")
-        );
-        thead.add(headerRow);
-        table.add(thead);
+        StringBuilder thead = new StringBuilder();
+        thead.append("<table class='ad-table' style='width:100%;border-collapse:collapse;' id='pengguna-table'>")
+             .append("<thead><tr>")
+             .append("<th>Data Pengguna</th><th>ID</th><th>Peran</th>")
+             .append("<th>Area / Lokasi</th><th>Tanggal Lahir</th><th>Jenis Kelamin</th>")
+             .append("<th style='text-align:center'>Aksi</th>")
+             .append("</tr></thead></table>");
 
-        Tbody tbody = new Tbody();
+        Div theadDiv = new Div();
+        theadDiv.getElement().setProperty("innerHTML", thead.toString());
 
-        // Row 1
-        tbody.add(createPenggunaRow("Budi Santoso", "@budis", "USR-001", "Warga", "ad-role-warga", "RT 01/RW 02", "15 Mei 1985", "Laki-laki"));
+        // ── Table Body (dynamic) ──────────────────────
+        tableBody = new Div();
+        
+        tableWrapper.add(theadDiv, tableBody);
+        card.add(tableWrapper);
 
-        // Row 2
-        tbody.add(createPenggunaRow("Siti Aminah", "@sitia", "USR-002", "Warga", "ad-role-warga", "RT 03/RW 02", "22 Ags 1990", "Perempuan"));
-
-        // Row 3
-        tbody.add(createPenggunaRow("Agus Pratama", "@agusp", "USR-003", "Petugas", "ad-role-petugas", "Distrik Pusat", "10 Nov 1988", "Laki-laki"));
-
-        table.add(tbody);
-        card.add(table);
-
-        // Pagination Footer
+        // ── Pagination Footer ──────────────────────────
         Div pagination = new Div();
         pagination.addClassName("ad-pagination");
 
-        Span info = new Span("Menampilkan 1 hingga 5 dari 450 pengguna");
-        info.addClassName("ad-page-info");
-
-        Div pageNav = new Div();
-        pageNav.addClassName("ad-page-nav");
-
-        Button btnPrev = new Button("Sebelumnya");
-        btnPrev.addClassName("ad-page-btn");
-
-        Button btn1 = new Button("1");
-        btn1.addClassName("ad-page-btn");
-        btn1.addClassName("ad-page-btn-active");
-
-        Button btn2 = new Button("2");
-        btn2.addClassName("ad-page-btn");
-
-        Button btn3 = new Button("3");
-        btn3.addClassName("ad-page-btn");
-
-        Span dots = new Span("...");
-        dots.getStyle().set("padding", "0 6px").set("color", "#94A3B8");
-
-        Button btnNext = new Button("Selanjutnya");
-        btnNext.addClassName("ad-page-btn");
-
-        pageNav.add(btnPrev, btn1, btn2, btn3, dots, btnNext);
-        pagination.add(info, pageNav);
+        infoText = new Span("Menampilkan 0 pengguna");
+        infoText.addClassName("ad-page-info");
+        pagination.add(infoText);
 
         card.add(pagination);
         body.add(card);
-
         main.add(topbar, body);
         add(sidebar, main);
+
+        // initial load
+        loadDataAndRefresh();
     }
 
-    private Tr createPenggunaRow(String name, String username, String id, String role, String roleClass, String area, String birth, String gender) {
-        Tr row = new Tr();
+    private void loadDataAndRefresh() {
+        users = penggunaRepository.findAll();
+        
+        // Apply filters
+        String search = searchField.getValue() != null ? searchField.getValue().toLowerCase() : "";
+        String peran = filterPeran.getValue();
+        String status = filterStatus.getValue();
 
-        // Data Pengguna
-        Td tdUser = new Td();
-        Div flexUser = new Div();
-        flexUser.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
+        users = users.stream().filter(u -> {
+            boolean matchSearch = search.isEmpty() || 
+                (u.getNamaLengkap() != null && u.getNamaLengkap().toLowerCase().contains(search)) ||
+                (u.getUsername() != null && u.getUsername().toLowerCase().contains(search));
+            
+            boolean matchPeran = "Semua Peran".equals(peran) || (u.getPeran() != null && u.getPeran().name().equals(peran));
+            boolean matchStatus = "Semua Status".equals(status) || (u.getStatus() != null && u.getStatus().name().equals(status));
+            
+            return matchSearch && matchPeran && matchStatus;
+        }).collect(Collectors.toList());
 
+        refreshTable();
+        infoText.setText("Menampilkan " + users.size() + " pengguna");
+    }
+
+    // ── Refresh table ─────────────────────────────────────────────────────────
+    private void refreshTable() {
+        tableBody.removeAll();
+        for (Pengguna u : users) {
+            tableBody.add(buildRow(u));
+        }
+    }
+
+    private Div buildRow(Pengguna u) {
+        Div row = new Div();
+        row.getStyle()
+            .set("display", "grid")
+            .set("grid-template-columns", "2fr 1fr 1fr 1fr 1fr 1fr 120px")
+            .set("align-items", "center")
+            .set("padding", "12px 16px")
+            .set("border-bottom", "1px solid #F1F5F9")
+            .set("gap", "12px");
+
+        // Data Pengguna cell
+        Div userCell = new Div();
+        userCell.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px");
         Div avatar = new Div();
         avatar.getStyle().set("width", "36px").set("height", "36px").set("border-radius", "50%")
-            .set("background-color", "#F1F5F9").set("border", "1px solid #E2E8F0");
+            .set("background-color", "#E2E8F0").set("flex-shrink", "0");
+        Div nameCol = new Div();
+        Span nameTxt = new Span(u.getNamaLengkap() != null ? u.getNamaLengkap() : "-");
+        nameTxt.getStyle().set("font-weight", "700").set("color", "#1E293B").set("display", "block");
+        Span userTxt = new Span("@" + u.getUsername());
+        userTxt.getStyle().set("font-size", "0.76rem").set("color", "#94A3B8");
+        nameCol.add(nameTxt, userTxt);
+        userCell.add(avatar, nameCol);
 
-        Div names = new Div();
-        names.getStyle().set("display", "flex").set("flex-direction", "column");
-        Span nameTxt = new Span(name);
-        nameTxt.getStyle().set("font-weight", "700").set("color", "#1E293B");
-        Span unameTxt = new Span(username);
-        unameTxt.getStyle().set("font-size", "0.78rem").set("color", "#94A3B8");
-        names.add(nameTxt, unameTxt);
+        // ID cell
+        Span idSpan = new Span("USR-" + u.getId());
+        idSpan.getStyle().set("font-weight", "600").set("color", "#64748B").set("font-size", "0.85rem");
 
-        flexUser.add(avatar, names);
-        tdUser.add(flexUser);
+        // Peran badge
+        String roleStr = u.getPeran() != null ? u.getPeran().name() : "-";
+        Span peranBadge = new Span(roleStr);
+        String peranColor = "PETUGAS_LAPANGAN".equals(roleStr) ? "#1D4ED8" : "ADMIN".equals(roleStr) ? "#7C3AED" : "#92400E";
+        String peranBg = "PETUGAS_LAPANGAN".equals(roleStr) ? "#DBEAFE" : "ADMIN".equals(roleStr) ? "#EDE9FE" : "#FEF3C7";
+        peranBadge.getStyle()
+            .set("background-color", peranBg).set("color", peranColor)
+            .set("padding", "3px 10px").set("border-radius", "20px")
+            .set("font-weight", "700").set("font-size", "0.78rem");
 
-        // ID Pengguna
-        Td tdId = new Td(id);
-        tdId.getStyle().set("font-weight", "600").set("color", "#64748B");
+        Span areaSpan = new Span(u.getRtRw() != null ? u.getRtRw() : "-");
+        areaSpan.getStyle().set("font-size", "0.85rem").set("color", "#475569");
 
-        // Peran
-        Td tdRole = new Td();
-        Span badge = new Span(role);
-        if ("Petugas".equalsIgnoreCase(role)) {
-            badge.getStyle().set("background-color", "#DBEAFE").set("color", "#1D4ED8")
-                .set("padding", "4px 12px").set("border-radius", "20px").set("font-weight", "700").set("font-size", "0.8rem");
-        } else {
-            badge.getStyle().set("background-color", "#F1F5F9").set("color", "#475569")
-                .set("padding", "4px 12px").set("border-radius", "20px").set("font-weight", "700").set("font-size", "0.8rem");
-        }
-        tdRole.add(badge);
+        Span birthSpan = new Span(u.getTanggalLahir() != null ? u.getTanggalLahir().format(FMT) : "-");
+        birthSpan.getStyle().set("font-size", "0.85rem").set("color", "#475569");
 
-        // Area / Lokasi
-        Td tdArea = new Td(area);
+        Span genderSpan = new Span(u.getJenisKelamin() != null ? u.getJenisKelamin().name() : "-");
+        genderSpan.getStyle().set("font-size", "0.85rem").set("color", "#475569");
 
-        // Tanggal Lahir
-        Td tdBirth = new Td(birth);
+        // Action buttons
+        Div actions = new Div();
+        actions.getStyle().set("display", "flex").set("gap", "6px").set("justify-content", "center");
 
-        // Jenis Kelamin
-        Td tdGender = new Td(gender);
+        Button btnEdit = new Button("✏");
+        btnEdit.getStyle()
+            .set("background", "#3B82F6").set("color", "white")
+            .set("border", "none").set("border-radius", "6px")
+            .set("padding", "5px 10px").set("cursor", "pointer")
+            .set("font-size", "0.78rem").set("font-weight", "600");
+        btnEdit.addClickListener(e -> openEditDialog(u));
 
-        row.add(tdUser, tdId, tdRole, tdArea, tdBirth, tdGender);
+        Button btnHapus = new Button("🗑");
+        btnHapus.getStyle()
+            .set("background", "#EF4444").set("color", "white")
+            .set("border", "none").set("border-radius", "6px")
+            .set("padding", "5px 10px").set("cursor", "pointer")
+            .set("font-size", "0.78rem");
+        btnHapus.addClickListener(e -> openDeleteConfirm(u));
+
+        actions.add(btnEdit, btnHapus);
+
+        row.add(userCell, idSpan, peranBadge, areaSpan, birthSpan, genderSpan, actions);
         return row;
-=======
-@PageTitle("Pengguna - Admin Lapor")
-public class AdminPenggunaView extends Div {
-
-    public AdminPenggunaView() {
-        addClassName("a-root");
-        add(AdminDasborView.buildSidebar("pengguna"), buildMain());
     }
 
-    private Div buildMain() {
-        Div main = new Div();
-        main.addClassName("a-main");
-
-        // Topbar
-        Div topbar = new Div();
-        topbar.addClassName("a-topbar");
-        Span title = new Span("Pengguna");
-        title.addClassName("a-topbar-title");
-        Div bell = new Div();
-        bell.addClassName("a-bell");
-        bell.add(new Span("🔔"));
-        Div bellDot = new Div();
-        bellDot.addClassName("a-bell-dot");
-        bell.add(bellDot);
-        topbar.add(title, bell);
-        main.add(topbar);
-
-        // Body
-        Div body = new Div();
-        body.addClassName("a-body");
-        body.add(buildTableCard());
-        main.add(body);
-
-        return main;
+    private void openAddDialog() {
+        Pengguna u = new Pengguna();
+        showDialog("Tambah Pengguna Baru", u, true);
     }
 
-    private Div buildTableCard() {
-        Div card = new Div();
-        card.addClassName("a-table-card");
-
-        // Filters row
-        Div filters = new Div();
-        filters.addClassName("a-table-filters");
-
-        NativeLabel search = new NativeLabel();
-        search.getElement().setProperty("innerHTML",
-            "<input class='a-search-input' placeholder='Cari pengguna...' />");
-        filters.add(search);
-
-        NativeLabel roleSelect = new NativeLabel();
-        roleSelect.getElement().setProperty("innerHTML",
-            "<select class='a-select'>" +
-            "<option>Semua Peran</option>" +
-            "<option>Warga</option>" +
-            "<option>Petugas</option>" +
-            "<option>Admin</option>" +
-            "</select>");
-        filters.add(roleSelect);
-
-        NativeLabel statusSelect = new NativeLabel();
-        statusSelect.getElement().setProperty("innerHTML",
-            "<select class='a-select'>" +
-            "<option>Semua Status</option>" +
-            "<option>Aktif</option>" +
-            "<option>Nonaktif</option>" +
-            "</select>");
-        filters.add(statusSelect);
-        card.add(filters);
-
-        // Table
-        StringBuilder html = new StringBuilder();
-        html.append("<table class='a-data-table'>");
-        html.append("<thead><tr>");
-        html.append("<th>Data Pengguna</th>");
-        html.append("<th>ID Pengguna</th>");
-        html.append("<th>Peran</th>");
-        html.append("<th>Area / Lokasi</th>");
-        html.append("<th>Tanggal Lahir</th>");
-        html.append("<th>Jenis Kelamin</th>");
-        html.append("</tr></thead>");
-        html.append("<tbody>");
-
-        // Row 1
-        html.append("<tr>");
-        html.append("<td><div class='a-user-cell'>");
-        html.append("<div class='a-user-avatar'></div>");
-        html.append("<div class='a-user-info'>");
-        html.append("<span class='a-user-name-text'>Budi Santoso</span>");
-        html.append("<span class='a-user-username'>@budis</span>");
-        html.append("</div></div></td>");
-        html.append("<td>USR-001</td>");
-        html.append("<td><span class='a-role-badge a-role-warga'>Warga</span></td>");
-        html.append("<td><div class='a-location-cell'><span class='a-loc-icon'>📍</span> RT 01/RW 02</div></td>");
-        html.append("<td>15 Mei 1985</td>");
-        html.append("<td>Laki-laki</td>");
-        html.append("</tr>");
-
-        // Row 2
-        html.append("<tr>");
-        html.append("<td><div class='a-user-cell'>");
-        html.append("<div class='a-user-avatar'></div>");
-        html.append("<div class='a-user-info'>");
-        html.append("<span class='a-user-name-text'>Siti Aminah</span>");
-        html.append("<span class='a-user-username'>@sitia</span>");
-        html.append("</div></div></td>");
-        html.append("<td>USR-002</td>");
-        html.append("<td><span class='a-role-badge a-role-warga'>Warga</span></td>");
-        html.append("<td><div class='a-location-cell'><span class='a-loc-icon'>📍</span> RT 03/RW 02</div></td>");
-        html.append("<td>22 Ags 1990</td>");
-        html.append("<td>Perempuan</td>");
-        html.append("</tr>");
-
-        // Row 3
-        html.append("<tr>");
-        html.append("<td><div class='a-user-cell'>");
-        html.append("<div class='a-user-avatar'></div>");
-        html.append("<div class='a-user-info'>");
-        html.append("<span class='a-user-name-text'>Agus Pratama</span>");
-        html.append("<span class='a-user-username'>@agusp</span>");
-        html.append("</div></div></td>");
-        html.append("<td>USR-003</td>");
-        html.append("<td><span class='a-role-badge a-role-petugas'>Petugas</span></td>");
-        html.append("<td><div class='a-location-cell'><span class='a-loc-icon'>📍</span> Distrik Pusat</div></td>");
-        html.append("<td>10 Nov 1988</td>");
-        html.append("<td>Laki-laki</td>");
-        html.append("</tr>");
-
-        html.append("</tbody></table>");
-
-        Div tableWrapper = new Div();
-        tableWrapper.getElement().setProperty("innerHTML", html.toString());
-        card.add(tableWrapper);
-
-        // Pagination
-        card.add(buildPagination());
-
-        return card;
+    private void openEditDialog(Pengguna u) {
+        showDialog("Edit Data Pengguna", u, false);
     }
 
-    private Div buildPagination() {
-        Div pagination = new Div();
-        pagination.addClassName("a-pagination");
+    private void showDialog(String title, Pengguna u, boolean isNew) {
+        Dialog dialog = new Dialog();
+        dialog.setWidth("640px");
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
 
-        Span info = new Span("Menampilkan 1 hingga 5 dari 450 pengguna");
-        info.addClassName("a-pagination-info");
+        // Header
+        Div headerDiv = new Div();
+        headerDiv.addClassName("user-dialog-header");
+        Span titleSpan = new Span(title);
+        titleSpan.addClassName("user-dialog-title");
+        Button btnClose = new Button("×", ev -> dialog.close());
+        btnClose.addClassName("user-dialog-close-btn");
+        headerDiv.add(titleSpan, btnClose);
+        dialog.getHeader().add(headerDiv);
 
-        Div controls = new Div();
-        controls.addClassName("a-pagination-controls");
+        // Avatar row
+        Div avatarRow = new Div();
+        avatarRow.addClassName("user-dialog-avatar-row");
+        Div avatarCircle = new Div();
+        avatarCircle.addClassName("user-dialog-avatar-circle");
+        Div avatarInfo = new Div();
+        avatarInfo.addClassName("user-dialog-avatar-info");
+        Span idText = new Span("ID Pengguna: " + (isNew ? "Baru" : "USR-" + u.getId()));
+        idText.addClassName("user-dialog-avatar-id");
+        avatarInfo.add(idText);
+        avatarRow.add(avatarCircle, avatarInfo);
 
-        // Previous button
-        NativeLabel prevBtn = new NativeLabel();
-        prevBtn.getElement().setProperty("innerHTML",
-            "<button class='a-page-btn a-page-btn-nav a-page-btn-disabled'>Sebelumnya</button>");
-        controls.add(prevBtn);
+        // Grid fields
+        Div grid = new Div();
+        grid.addClassName("user-dialog-grid");
 
-        // Page numbers
-        NativeLabel page1 = new NativeLabel();
-        page1.getElement().setProperty("innerHTML",
-            "<button class='a-page-btn a-page-btn-active'>1</button>");
-        controls.add(page1);
+        TextField nameField = new TextField("Nama Lengkap");
+        nameField.setValue(u.getNamaLengkap() != null ? u.getNamaLengkap() : "");
+        nameField.addClassName("user-dialog-input");
 
-        NativeLabel page2 = new NativeLabel();
-        page2.getElement().setProperty("innerHTML",
-            "<button class='a-page-btn'>2</button>");
-        controls.add(page2);
+        TextField userField = new TextField("Username");
+        userField.setValue(u.getUsername() != null ? u.getUsername() : "");
+        userField.addClassName("user-dialog-input");
 
-        NativeLabel page3 = new NativeLabel();
-        page3.getElement().setProperty("innerHTML",
-            "<button class='a-page-btn'>3</button>");
-        controls.add(page3);
+        TextField passField = new TextField("Kata Sandi (Biarkan kosong jika tidak diubah)");
+        passField.addClassName("user-dialog-input");
+        if (isNew) passField.setLabel("Kata Sandi");
 
-        Span ellipsis = new Span("...");
-        ellipsis.addClassName("a-page-ellipsis");
-        controls.add(ellipsis);
+        ComboBox<Pengguna.Peran> roleBox = new ComboBox<>("Peran Akun");
+        roleBox.setItems(Pengguna.Peran.values());
+        roleBox.setValue(u.getPeran() != null ? u.getPeran() : Pengguna.Peran.WARGA);
+        roleBox.addClassName("user-dialog-combo");
 
-        // Next button
-        NativeLabel nextBtn = new NativeLabel();
-        nextBtn.getElement().setProperty("innerHTML",
-            "<button class='a-page-btn a-page-btn-nav'>Selanjutnya</button>");
-        controls.add(nextBtn);
+        ComboBox<Pengguna.Status> statusBox = new ComboBox<>("Status Akun");
+        statusBox.setItems(Pengguna.Status.values());
+        statusBox.setValue(u.getStatus() != null ? u.getStatus() : Pengguna.Status.AKTIF);
+        statusBox.addClassName("user-dialog-combo");
 
-        pagination.add(info, controls);
-        return pagination;
->>>>>>> 95c1a299f9ff90e419379ec411258642255f57ec
+        DatePicker birthField = new DatePicker("Tanggal Lahir");
+        birthField.setValue(u.getTanggalLahir());
+        birthField.addClassName("user-dialog-input");
+
+        ComboBox<Pengguna.JenisKelamin> genderBox = new ComboBox<>("Jenis Kelamin");
+        genderBox.setItems(Pengguna.JenisKelamin.values());
+        genderBox.setValue(u.getJenisKelamin());
+        genderBox.addClassName("user-dialog-combo");
+
+        TextField areaField = new TextField("Area / Lokasi (RT/RW)");
+        areaField.setValue(u.getRtRw() != null ? u.getRtRw() : "");
+        areaField.addClassName("user-dialog-input");
+
+        grid.add(nameField, userField, passField, roleBox, statusBox, birthField, genderBox, areaField);
+
+        VerticalLayout layout = new VerticalLayout(avatarRow, grid);
+        layout.setPadding(false);
+        layout.setSpacing(false);
+        dialog.add(layout);
+
+        // Footer buttons
+        Div footer = new Div();
+        footer.addClassName("user-dialog-footer");
+
+        Button btnCancel = new Button("Batal", ev -> dialog.close());
+        btnCancel.addClassName("user-dialog-cancel-btn");
+
+        Button btnSave = new Button("Simpan");
+        btnSave.addClassName("user-dialog-save-btn");
+        btnSave.addClickListener(ev -> {
+            if (nameField.isEmpty() || userField.isEmpty()) {
+                Notification n = new Notification("Nama Lengkap dan Username harus diisi!", 3000, Notification.Position.TOP_CENTER);
+                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                n.open();
+                return;
+            }
+            if (isNew && passField.isEmpty()) {
+                Notification n = new Notification("Kata sandi harus diisi untuk pengguna baru!", 3000, Notification.Position.TOP_CENTER);
+                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                n.open();
+                return;
+            }
+            u.setNamaLengkap(nameField.getValue());
+            u.setUsername(userField.getValue());
+            if (!passField.isEmpty()) {
+                u.setKataSandi(passField.getValue());
+            }
+            u.setPeran(roleBox.getValue());
+            u.setStatus(statusBox.getValue());
+            u.setTanggalLahir(birthField.getValue());
+            u.setJenisKelamin(genderBox.getValue());
+            u.setRtRw(areaField.getValue());
+            
+            penggunaRepository.save(u);
+            loadDataAndRefresh();
+            dialog.close();
+            Notification n = new Notification("Data pengguna berhasil disimpan!", 3000, Notification.Position.BOTTOM_CENTER);
+            n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            n.open();
+        });
+
+        footer.add(btnCancel, btnSave);
+        dialog.getFooter().add(footer);
+        dialog.open();
+    }
+
+    private void openDeleteConfirm(Pengguna u) {
+        Dialog dialog = new Dialog();
+        dialog.setWidth("380px");
+        dialog.setHeaderTitle("🗑 Hapus Pengguna");
+
+        VerticalLayout content = new VerticalLayout();
+        content.setPadding(false);
+        content.setSpacing(false);
+
+        Paragraph msg = new Paragraph("Apakah Anda yakin ingin menghapus pengguna");
+        Paragraph name = new Paragraph("\"" + u.getNamaLengkap() + "\" (" + u.getUsername() + ")?");
+        name.getStyle().set("font-weight", "700").set("color", "#EF4444").set("margin", "0");
+        Paragraph warn = new Paragraph("Tindakan ini tidak dapat dibatalkan.");
+        warn.getStyle().set("color", "#94A3B8").set("font-size", "0.85rem");
+
+        content.add(msg, name, warn);
+        dialog.add(content);
+
+        HorizontalLayout footer = new HorizontalLayout();
+        footer.setWidthFull();
+        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        footer.setSpacing(true);
+
+        Button btnCancel = new Button("Batal", ev -> dialog.close());
+        btnCancel.getStyle().set("background", "#F1F5F9").set("color", "#475569").set("border", "none").set("border-radius", "8px").set("padding", "8px 20px").set("cursor", "pointer");
+
+        Button btnConfirm = new Button("Ya, Hapus");
+        btnConfirm.getStyle().set("background", "#EF4444").set("color", "white").set("border", "none").set("border-radius", "8px").set("padding", "8px 20px").set("cursor", "pointer").set("font-weight", "700");
+        btnConfirm.addClickListener(ev -> {
+            penggunaRepository.delete(u);
+            loadDataAndRefresh();
+            dialog.close();
+            Notification n = new Notification("Pengguna berhasil dihapus.", 3000, Notification.Position.BOTTOM_CENTER);
+            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            n.open();
+        });
+
+        footer.add(btnCancel, btnConfirm);
+        dialog.getFooter().add(footer);
+        dialog.open();
     }
 }

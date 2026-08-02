@@ -1,41 +1,48 @@
 package com.example.application.views.admin;
 
-import com.example.application.views.BlankLayout;
+import com.example.application.model.Laporan;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.LaporanService;
+import com.example.application.views.warga.BlankLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+
 @Route(value = "admin/dashboard", layout = BlankLayout.class)
 @RouteAlias(value = "admin", layout = BlankLayout.class)
 @PageTitle("Dasbor Admin - Lapor Gess")
 public class AdminDashboardView extends Div {
 
-    public AdminDashboardView() {
+    private final LaporanService laporanService;
+    private final PenggunaRepository penggunaRepository;
+
+    public AdminDashboardView(LaporanService laporanService, PenggunaRepository penggunaRepository) {
+        this.laporanService = laporanService;
+        this.penggunaRepository = penggunaRepository;
         addClassName("ad-root");
 
-        // Build Sidebar
-        Div sidebar = AdminLayout.buildSidebar("admin/dashboard");
+        long laporanPending = laporanService.countByStatus(Laporan.Status.PENDING);
+        long petugasAktif = penggunaRepository.countByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.PETUGAS_LAPANGAN);
+        long verifikasiPending = penggunaRepository.countByStatus(Pengguna.Status.PENDING);
+        Div sidebar = AdminLayout.buildSidebar("admin/dashboard", laporanPending, petugasAktif, verifikasiPending);
 
-        // Main content area
         Div main = new Div();
         main.addClassName("ad-main");
 
-        // Topbar
         Div topbar = AdminLayout.buildTopbar("Dasbor");
 
-        // Scrollable body
         Div body = new Div();
         body.addClassName("ad-body");
 
-        // 1. Stats Row (4 Cards)
         body.add(buildStatCards());
-
-        // 2. Middle Row (Map & Pending Registrations)
         body.add(buildMiddleRow());
-
-        // 3. Weekly Volume Chart Row
         body.add(buildWeeklyChartCard());
 
         main.add(topbar, body);
@@ -46,20 +53,23 @@ public class AdminDashboardView extends Div {
         Div grid = new Div();
         grid.addClassName("ad-stats-grid");
 
-        // Card 1: Total Laporan
-        grid.add(createStatCard("Total Laporan", "1.248", "📄", "ad-stat-bg-orange"));
+        long totalLaporan = laporanService.countByStatus(Laporan.Status.PENDING)
+                + laporanService.countByStatus(Laporan.Status.DIPROSES)
+                + laporanService.countByStatus(Laporan.Status.SELESAI)
+                + laporanService.countByStatus(Laporan.Status.DITOLAK);
+        long totalPengguna = penggunaRepository.findByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.WARGA).size();
+        long diproses = laporanService.countByStatus(Laporan.Status.DIPROSES);
+        long selesai = laporanService.countByStatus(Laporan.Status.SELESAI);
 
-        // Card 2: Selesai
-        grid.add(createStatCard("Selesai", "984", "✔", "ad-stat-bg-teal"));
-
-        // Card 3: Menunggu Verifikasi
-        grid.add(createStatCard("Menunggu Verifikasi", "12", "⚠️", "ad-stat-bg-yellow"));
-
-        // Card 4: Diproses
-        grid.add(createStatCard("Diproses", "45", "⏱", "ad-stat-bg-blue"));
+        grid.add(createStatCard("Total Laporan", String.valueOf(totalLaporan), "📄", "ad-stat-bg-orange"));
+        grid.add(createStatCard("Pengguna Aktif", String.valueOf(totalPengguna), "👥", "ad-stat-bg-blue"));
+        grid.add(createStatCard("Sedang Diproses", String.valueOf(diproses), "⏱", "ad-stat-bg-yellow"));
+        grid.add(createStatCard("Laporan Selesai", String.valueOf(selesai), "✔", "ad-stat-bg-teal"));
 
         return grid;
     }
+
+
 
     private Div createStatCard(String label, String value, String iconSymbol, String bgClass) {
         Div card = new Div();
@@ -154,13 +164,24 @@ public class AdminDashboardView extends Div {
         Div pendingList = new Div();
         pendingList.addClassName("ad-pending-list");
 
-        pendingList.add(createPendingItem("P1", "Pengguna Baru 1", "RT 01/02"));
-        pendingList.add(createPendingItem("P2", "Pengguna Baru 2", "RT 01/02"));
-        pendingList.add(createPendingItem("P3", "Pengguna Baru 3", "RT 01/02"));
+        List<Pengguna> pendingUsers = penggunaRepository.findByStatus(Pengguna.Status.PENDING);
+        if (pendingUsers.isEmpty()) {
+            Div empty = new Div(new Span("Tidak ada pendaftaran tertunda."));
+            empty.getStyle().set("padding", "20px").set("color", "#94A3B8").set("text-align", "center");
+            pendingList.add(empty);
+        } else {
+            pendingUsers.stream().limit(3).forEach(p -> {
+                String roleTag = p.getPeran() == Pengguna.Peran.PETUGAS_LAPANGAN ? " (Petugas)" : " (Warga)";
+                String rt = p.getRtRw() != null ? "RT " + p.getRtRw() : "-";
+                String initial = p.getNamaLengkap() != null && !p.getNamaLengkap().isEmpty() ? p.getNamaLengkap().substring(0, 1).toUpperCase() : "U";
+                pendingList.add(createPendingItem(initial, p.getNamaLengkap() + roleTag, rt));
+            });
+        }
 
-        Anchor linkAll = new Anchor("#", "Lihat Semua");
+        Span linkAll = new Span("Lihat Semua");
         linkAll.addClassName("ad-btn-link-orange");
-        linkAll.getElement().addEventListener("click", e -> UI.getCurrent().navigate("admin/verifikasi"));
+        linkAll.getStyle().set("cursor", "pointer").set("display", "block").set("text-align", "center").set("margin-top", "16px").set("font-weight", "600");
+        linkAll.addClickListener(e -> UI.getCurrent().navigate("admin/verifikasi"));
 
         pendingCard.add(pendingHeader, pendingList, linkAll);
 
@@ -183,20 +204,20 @@ public class AdminDashboardView extends Div {
         nameTxt.addClassName("ad-pending-name");
         Span rtTxt = new Span(rt);
         rtTxt.addClassName("ad-pending-rt");
-        info.add(nameTxt, new Br(), rtTxt);
+        rtTxt.getStyle().set("display", "block");
+        info.add(nameTxt, rtTxt);
 
         left.add(avatar, info);
 
         Div actions = new Div();
         actions.addClassName("ad-pending-actions");
 
-        Div btnApprove = new Div(new Span("✔"));
-        btnApprove.addClassName("ad-icon-btn-green");
+        Div btnDetail = new Div(new Span("➔"));
+        btnDetail.addClassName("ad-icon-btn-green");
+        btnDetail.getStyle().set("background-color", "#FFF0E0").set("color", "#FF7A00").set("cursor", "pointer");
+        btnDetail.addClickListener(e -> UI.getCurrent().navigate("admin/verifikasi"));
 
-        Div btnReject = new Div(new Span("🗑"));
-        btnReject.addClassName("ad-icon-btn-red");
-
-        actions.add(btnApprove, btnReject);
+        actions.add(btnDetail);
         item.add(left, actions);
 
         return item;
@@ -217,7 +238,30 @@ public class AdminDashboardView extends Div {
 
         // Days bar representation
         String[] days = {"Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"};
-        int[] heights = {40, 65, 30, 85, 50, 75, 45};
+        int[] heights = new int[7]; 
+        
+        List<Laporan> allLaporan = laporanService.getAllLaporan();
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+        
+        for (Laporan l : allLaporan) {
+            LocalDate dt = l.getDibuatPada().toLocalDate();
+            if (!dt.isBefore(startOfWeek) && !dt.isAfter(startOfWeek.plusDays(6))) {
+                int dayIndex = dt.getDayOfWeek().getValue() - 1;
+                heights[dayIndex]++;
+            }
+        }
+        
+        int max = 0;
+        for (int h : heights) if (h > max) max = h;
+        if (max > 0) {
+            for (int i = 0; i < heights.length; i++) {
+                heights[i] = (int) Math.round((double) heights[i] / max * 100);
+            }
+        } else {
+            // fallback if no data
+            for (int i = 0; i < heights.length; i++) heights[i] = 5;
+        }
 
         for (int i = 0; i < days.length; i++) {
             Div barWrap = new Div();

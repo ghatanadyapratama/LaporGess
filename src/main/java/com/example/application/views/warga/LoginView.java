@@ -1,4 +1,4 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
 import com.example.application.model.Pengguna;
 import com.example.application.service.PenggunaService;
@@ -12,8 +12,6 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
@@ -95,10 +93,26 @@ public class LoginView extends HorizontalLayout {
 
             try {
                 Pengguna authenticated = penggunaService.authenticateUser(usernameVal, passwordVal);
+
+                // Save to session
+                com.example.application.service.SessionManager.login(
+                    authenticated.getUsername(),
+                    authenticated.getPeran().name(),
+                    authenticated.getNamaLengkap(),
+                    authenticated.getPoin() != null ? authenticated.getPoin() : 0
+                );
+
                 showNotification("Selamat datang, " + authenticated.getNamaLengkap() + "!", NotificationVariant.LUMO_SUCCESS);
-                getUI().ifPresent(ui -> ui.navigate("dashboard"));
+                // Redirect based on role
+                if (authenticated.getPeran() == Pengguna.Peran.ADMIN) {
+                    getUI().ifPresent(ui -> ui.navigate("admin/dashboard"));
+                } else if (authenticated.getPeran() == Pengguna.Peran.PETUGAS_LAPANGAN) {
+                    getUI().ifPresent(ui -> ui.navigate("petugas/dashboard"));
+                } else {
+                    getUI().ifPresent(ui -> ui.navigate("dashboard"));
+                }
             } catch (IllegalStateException ex) {
-                showNotification(ex.getMessage(), NotificationVariant.LUMO_PRIMARY); // LUMO_PRIMARY for warnings/info messages
+                showNotification(ex.getMessage(), NotificationVariant.LUMO_PRIMARY);
             } catch (Exception ex) {
                 showNotification(ex.getMessage(), NotificationVariant.LUMO_ERROR);
             }

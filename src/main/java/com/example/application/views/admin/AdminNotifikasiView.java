@@ -1,6 +1,9 @@
 package com.example.application.views.admin;
 
-import com.example.application.views.BlankLayout;
+import com.example.application.model.Notifikasi;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
+import com.example.application.views.warga.BlankLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.*;
@@ -8,6 +11,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +19,15 @@ import java.util.List;
 @PageTitle("Notifikasi Sistem - Lapor Gess")
 public class AdminNotifikasiView extends Div {
 
+    private final NotifikasiRepository notifikasiRepository;
     private final List<Div> unreadDots = new ArrayList<>();
+    private List<Notifikasi> notifications;
+    private Div list;
 
-    public AdminNotifikasiView() {
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
+
+    public AdminNotifikasiView(NotifikasiRepository notifikasiRepository) {
+        this.notifikasiRepository = notifikasiRepository;
         addClassName("ad-root");
 
         // Build Sidebar
@@ -47,73 +57,71 @@ public class AdminNotifikasiView extends Div {
 
         Span markAllRead = new Span("Tandai semua dibaca");
         markAllRead.addClassName("ad-notif-mark-all");
-        markAllRead.addClickListener(e -> {
-            for (Div dot : unreadDots) {
-                dot.getStyle().set("visibility", "hidden");
-            }
-            Notification.show("Semua notifikasi telah ditandai sebagai dibaca.");
-        });
+        markAllRead.addClickListener(e -> markAllAsRead());
 
         header.add(title, markAllRead);
         card.add(header);
 
         // Notifications List Container
-        Div list = new Div();
+        list = new Div();
         list.addClassName("ad-notif-list-container");
-
-        // 1. Laporan Darurat Baru Masuk!
-        list.add(createNotifRow(
-            true,
-            "ad-notif-avatar-red",
-            "⚠️",
-            "Laporan Darurat Baru Masuk!",
-            "Pohon tumbang menutup jalan utama di area RT 02 / RW 01. Pelapor: Budi Santoso.",
-            "Baru saja",
-            "Tinjau Laporan",
-            () -> UI.getCurrent().navigate("admin/laporan")
-        ));
-
-        // 2. Pendaftaran Pengguna Baru
-        list.add(createNotifRow(
-            true,
-            "ad-notif-avatar-gray",
-            "👤",
-            "Pendaftaran Pengguna Baru",
-            "\"Rina Wijaya\" (Warga - RT 02/RW 01) baru saja mendaftar dan menunggu persetujuan Anda.",
-            "1 jam yang lalu",
-            "Verifikasi",
-            () -> UI.getCurrent().navigate("admin/verifikasi")
-        ));
-
-        // 3. Tugas Diselesaikan oleh Petugas
-        list.add(createNotifRow(
-            false,
-            "ad-notif-avatar-teal",
-            "✓",
-            "Tugas Diselesaikan oleh Petugas",
-            "Agus Pratama telah menandai laporan \"Lampu Jalan Mati\" sebagai Selesai.",
-            "3 jam yang lalu",
-            null,
-            null
-        ));
-
-        // 4. Updates / Notification System
-        list.add(createNotifRow(
-            false,
-            "ad-notif-avatar-teal",
-            "ℹ️",
-            "Pembaruan Sistem Berhasil",
-            "Pembaruan modul verifikasi otomatis RT/RW telah berhasil dipasang.",
-            "1 hari yang lalu",
-            null,
-            null
-        ));
-
         card.add(list);
         body.add(card);
 
         main.add(topbar, body);
         add(sidebar, main);
+
+        loadNotifications();
+    }
+
+    private void loadNotifications() {
+        list.removeAll();
+        unreadDots.clear();
+        
+        notifications = notifikasiRepository.findByPengguna_PeranOrderByDibuatPadaDesc(Pengguna.Peran.ADMIN);
+        
+        if (notifications.isEmpty()) {
+            Div emptyMsg = new Div(new Span("Belum ada notifikasi baru."));
+            emptyMsg.getStyle().set("padding", "20px").set("text-align", "center").set("color", "#64748B");
+            list.add(emptyMsg);
+            return;
+        }
+
+        for (Notifikasi notif : notifications) {
+            String bgClass = "ad-notif-avatar-gray";
+            String icon = "ℹ️";
+            
+            if ("WARNING".equals(notif.getTipe())) {
+                bgClass = "ad-notif-avatar-red";
+                icon = "⚠️";
+            } else if ("SUCCESS".equals(notif.getTipe())) {
+                bgClass = "ad-notif-avatar-teal";
+                icon = "✓";
+            }
+
+            list.add(createNotifRow(
+                !notif.isDibaca(),
+                bgClass,
+                icon,
+                notif.getTipe(),
+                notif.getPesan(),
+                notif.getDibuatPada() != null ? notif.getDibuatPada().format(FMT) : "Baru saja",
+                null,
+                null
+            ));
+        }
+    }
+
+    private void markAllAsRead() {
+        for (Notifikasi notif : notifications) {
+            notif.setDibaca(true);
+        }
+        notifikasiRepository.saveAll(notifications);
+        
+        for (Div dot : unreadDots) {
+            dot.getStyle().set("visibility", "hidden");
+        }
+        Notification.show("Semua notifikasi telah ditandai sebagai dibaca.");
     }
 
     private Div createNotifRow(

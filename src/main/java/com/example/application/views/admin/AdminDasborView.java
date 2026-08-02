@@ -1,11 +1,11 @@
 package com.example.application.views.admin;
 
-import com.example.application.views.BlankLayout;
+import com.example.application.views.warga.BlankLayout;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-@Route(value = "admin", layout = BlankLayout.class)
+@Route(value = "admin/dasbor-v1", layout = BlankLayout.class)
 @PageTitle("Dasbor - Admin Lapor")
 public class AdminDasborView extends Div {
 

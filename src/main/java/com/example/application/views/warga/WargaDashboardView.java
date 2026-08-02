@@ -1,15 +1,45 @@
-package com.example.application.views;
+package com.example.application.views.warga;
 
+import com.example.application.model.Laporan;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.PenggunaRepository;
+import com.example.application.service.LaporanService;
+import com.example.application.service.SessionManager;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 @Route(value = "dashboard", layout = BlankLayout.class)
 @PageTitle("Beranda - Lapor Gess")
-public class WargaDashboardView extends Div {
+public class WargaDashboardView extends Div implements BeforeEnterObserver {
 
-    public WargaDashboardView() {
+    private final LaporanService laporanService;
+    private final PenggunaRepository penggunaRepository;
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
+
+    public WargaDashboardView(LaporanService laporanService, PenggunaRepository penggunaRepository) {
+        this.laporanService = laporanService;
+        this.penggunaRepository = penggunaRepository;
         addClassName("d-root");
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (!SessionManager.isLoggedIn()) {
+            event.rerouteTo("login");
+            return;
+        }
+        removeAll();
+        buildUI();
+    }
+
+    private void buildUI() {
         add(buildSidebar(), buildMain());
     }
 
@@ -33,24 +63,12 @@ public class WargaDashboardView extends Div {
         // Nav
         Div nav = new Div();
         nav.addClassName("d-nav");
-        nav.add(navItem("icons/home.png",      "Beranda",     true));
-        Div laporanNav = navItem("icons/laporan.png",   "Laporan Saya",false);
-        laporanNav.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("laporan-saya")));
-        nav.add(laporanNav);
-        Div peringkatNav = navItem("icons/iconPiala.png", "Peringkat",   false);
-        peringkatNav.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("peringkat")));
-        nav.add(peringkatNav);
-        Div hadiahNav = navItem("icons/hadiah.png", "Toko Hadiah", false);
-        hadiahNav.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("toko-hadiah")));
-        nav.add(hadiahNav);
-
-        Div edukasiNav = navItem("icons/buku.png", "Edukasi", false);
-        edukasiNav.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("edukasi")));
-        nav.add(edukasiNav);
-
-        Div profilNav = navItem("icons/profile.png", "Profil", false);
-        profilNav.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("profil")));
-        nav.add(profilNav);
+        nav.add(navItem("icons/home.png",      "Beranda",     true, "dashboard"));
+        nav.add(navItem("icons/laporan.png",   "Laporan Saya",false, "laporan-saya"));
+        nav.add(navItem("icons/iconPiala.png", "Peringkat",   false, "peringkat"));
+        nav.add(navItem("icons/hadiah.png", "Toko Hadiah", false, "toko-hadiah"));
+        nav.add(navItem("icons/buku.png", "Edukasi", false, "edukasi"));
+        nav.add(navItem("icons/profile.png", "Profil", false, "profil"));
         sidebar.add(nav);
 
         // Spacer
@@ -62,13 +80,13 @@ public class WargaDashboardView extends Div {
         Div cta = new Div();
         cta.addClassName("d-cta");
         cta.add(new Span("+ Buat Laporan"));
-        cta.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("buat-laporan")));
+        cta.addClickListener(e -> UI.getCurrent().navigate("buat-laporan"));
         sidebar.add(cta);
 
         return sidebar;
     }
 
-    private Div navItem(String icon, String label, boolean active) {
+    private Div navItem(String icon, String label, boolean active, String route) {
         Div item = new Div();
         item.addClassName("d-nav-item");
         if (active) item.addClassName("d-nav-active");
@@ -77,6 +95,7 @@ public class WargaDashboardView extends Div {
         Span txt = new Span(label);
         txt.addClassName("d-nav-label");
         item.add(img, txt);
+        item.addClickListener(e -> UI.getCurrent().navigate(route));
         return item;
     }
 
@@ -86,12 +105,21 @@ public class WargaDashboardView extends Div {
     private Div buildMain() {
         Div main = new Div();
         main.addClassName("d-main");
-        main.add(buildTopbar());
-        main.add(buildBody());
+        
+        Pengguna pengguna = penggunaRepository.findByUsername(SessionManager.getUsername()).orElse(null);
+        String name = pengguna != null ? pengguna.getNamaLengkap() : SessionManager.getNama();
+        List<Laporan> laporanList = laporanService.getLaporanByWarga(SessionManager.getUsername());
+
+        int totalLaporan = laporanList.size();
+        // Pakai poin dari DB, bukan hasil hitungan manual
+        int totalPoin = pengguna != null && pengguna.getPoin() != null ? pengguna.getPoin() : 0;
+
+        main.add(buildTopbar(name, totalPoin));
+        main.add(buildBody(name, totalPoin, totalLaporan, laporanList));
         return main;
     }
 
-    private Div buildTopbar() {
+    private Div buildTopbar(String name, int totalPoin) {
         Div bar = new Div();
         bar.addClassName("d-topbar");
 
@@ -107,7 +135,7 @@ public class WargaDashboardView extends Div {
         badge.addClassName("d-poin-badge");
         Image trophy = new Image("icons/pialaOren.png", "poin");
         trophy.addClassName("d-poin-icon");
-        Span poinTxt = new Span("1.250 Poin");
+        Span poinTxt = new Span(String.format("%,d Poin", totalPoin).replace(',', '.'));
         poinTxt.addClassName("d-poin-txt");
         badge.add(trophy, poinTxt);
 
@@ -117,44 +145,44 @@ public class WargaDashboardView extends Div {
         Image bellImg = new Image("icons/bell.png", "notif");
         bellImg.addClassName("d-bell-img");
         bell.add(bellImg);
-        bell.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("notifikasi")));
+        bell.addClickListener(e -> UI.getCurrent().navigate("notifikasi"));
 
         // Avatar
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span("B"));
+        av.add(new Span(name != null && !name.isEmpty() ? name.substring(0, 1).toUpperCase() : "U"));
 
         right.add(badge, bell, av);
         bar.add(right);
         return bar;
     }
 
-    private Div buildBody() {
+    private Div buildBody(String name, int totalPoin, int totalLaporan, List<Laporan> laporanList) {
         Div body = new Div();
         body.addClassName("d-body");
-        body.add(buildWelcome());
-        body.add(buildLower());
+        body.add(buildWelcome(name, totalPoin, totalLaporan));
+        body.add(buildLower(laporanList));
         return body;
     }
 
     // ── Welcome card ──────────────────────────
-    private Div buildWelcome() {
+    private Div buildWelcome(String name, int totalPoin, int totalLaporan) {
         Div card = new Div();
         card.addClassName("d-welcome");
 
         Div left = new Div();
         left.addClassName("d-welcome-left");
-        Span greeting = new Span("Selamat Datang Kembali, Budi!");
+        Span greeting = new Span("Selamat Datang Kembali, " + (name != null ? name : "Warga") + "!");
         greeting.addClassName("d-welcome-title");
-        Span sub = new Span("Lingkungan RT 01 / RW 02 dalam keadaan aman hari ini.");
+        Span sub = new Span("Ayo bantu jaga lingkungan tetap bersih dan aman.");
         sub.addClassName("d-welcome-sub");
         left.add(greeting, sub);
         card.add(left);
 
         Div stats = new Div();
         stats.addClassName("d-stats");
-        stats.add(statCard("icons/piala.png",   "d-icon-orange", "Total Poin",      "1.250"));
-        stats.add(statCard("icons/ceklist.png", "d-icon-white",  "Laporan\nSelesai","14"));
+        stats.add(statCard("icons/piala.png",   "d-icon-orange", "Total Poin", String.format("%,d", totalPoin).replace(',', '.')));
+        stats.add(statCard("icons/ceklist.png", "d-icon-white",  "Total\nLaporan", String.valueOf(totalLaporan)));
         card.add(stats);
 
         return card;
@@ -185,15 +213,15 @@ public class WargaDashboardView extends Div {
     }
 
     // ── Lower row ─────────────────────────────
-    private Div buildLower() {
+    private Div buildLower(List<Laporan> laporanList) {
         Div lower = new Div();
         lower.addClassName("d-lower");
-        lower.add(buildLaporan());
+        lower.add(buildLaporan(laporanList));
         lower.add(buildTrash());
         return lower;
     }
 
-    private Div buildLaporan() {
+    private Div buildLaporan(List<Laporan> laporanList) {
         Div section = new Div();
         section.addClassName("d-laporan");
 
@@ -203,44 +231,68 @@ public class WargaDashboardView extends Div {
         title.addClassName("d-sec-title");
         Span lihat = new Span("Lihat Semua");
         lihat.addClassName("d-lihat");
+        lihat.addClickListener(e -> UI.getCurrent().navigate("laporan-saya"));
+        lihat.getStyle().set("cursor", "pointer");
         header.add(title, lihat);
         section.add(header);
 
-        section.add(laporanCard("Pohon Tumbang di Jl. Utama", "Jl. Sudirman, RT 01/02", "2026-07-16", "Diproses", "d-badge-proses"));
-        section.add(laporanCard("Lampu Jalan Mati", "Jl. Merdeka, RT 03/02", "2026-07-15", "Selesai", "d-badge-selesai"));
+        if (laporanList == null || laporanList.isEmpty()) {
+            Div empty = new Div(new Span("Anda belum memiliki laporan."));
+            empty.getStyle().set("color", "#94A3B8").set("padding", "20px");
+            section.add(empty);
+        } else {
+            // Tampilkan max 3 laporan terbaru
+            int count = Math.min(laporanList.size(), 3);
+            for (int i = 0; i < count; i++) {
+                Laporan lap = laporanList.get(i);
+                section.add(laporanCard(lap));
+            }
+        }
         return section;
     }
 
-    private Div laporanCard(String judul, String lokasi, String tgl, String status, String badgeCls) {
+    private Div laporanCard(Laporan laporan) {
         Div card = new Div();
         card.addClassName("d-lap-card");
 
-        Div img = new Div();
-        img.addClassName("d-lap-img");
-        card.add(img);
+        Div imgBox = new Div();
+        imgBox.addClassName("ls-card-img-box");
+        imgBox.getStyle().set("width", "70px").set("height", "70px").set("border-radius", "10px");
+        if (laporan.getFotoUrl() != null && !laporan.getFotoUrl().isEmpty()) {
+            Image image = new Image(laporan.getFotoUrl(), "Foto Laporan");
+            image.addClassName("ls-card-img");
+            imgBox.add(image);
+        } else {
+            Span noImg = new Span("🖼");
+            noImg.getStyle().set("font-size", "1.5rem").set("opacity", "0.5");
+            imgBox.add(noImg);
+        }
+        card.add(imgBox);
 
         Div content = new Div();
         content.addClassName("d-lap-content");
 
         Div topRow = new Div();
         topRow.addClassName("d-lap-top");
-        Span judulSpan = new Span(judul);
+        Span judulSpan = new Span(laporan.getJudul());
         judulSpan.addClassName("d-lap-judul");
-        Span badge = new Span(status);
-        badge.addClassName("d-badge");
+        
+        String statusText = laporan.getStatus().name();
+        String badgeCls = "ls-badge-" + statusText.toLowerCase();
+        Span badge = new Span(statusText);
         badge.addClassName(badgeCls);
+        
         topRow.add(judulSpan, badge);
 
         Div meta = new Div();
         meta.addClassName("d-lap-meta");
-        Span lokasiSpan = new Span("📍 " + lokasi);
+        Span lokasiSpan = new Span("📍 " + (laporan.getLokasi() != null ? laporan.getLokasi() : "-"));
         lokasiSpan.addClassName("d-lap-meta-row");
-        Span tglSpan = new Span("🕐 Dilaporkan pada " + tgl);
+        Span tglSpan = new Span("🕐 Dilaporkan pada " + laporan.getDibuatPada().format(FMT));
         tglSpan.addClassName("d-lap-meta-row");
         meta.add(lokasiSpan, tglSpan);
 
         content.add(topRow, meta);
-        card.add(content);
         return card;
     }
 
@@ -267,7 +319,7 @@ public class WargaDashboardView extends Div {
         Div bacaBtn = new Div();
         bacaBtn.addClassName("d-baca-btn");
         bacaBtn.add(new Span("Baca Selengkapnya"));
-        bacaBtn.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("edukasi")));
+        bacaBtn.addClickListener(e -> UI.getCurrent().navigate("edukasi"));
 
         article.add(newBadge, artTitle, artSub, bacaBtn);
         section.add(article);
