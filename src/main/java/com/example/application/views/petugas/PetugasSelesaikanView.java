@@ -11,7 +11,6 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -107,19 +106,10 @@ public class PetugasSelesaikanView extends Div implements BeforeEnterObserver {
         fotoLabel.getStyle().set("font-size", "0.88rem").set("font-weight", "700").set("color", "#334155")
             .set("display", "block").set("margin-top", "20px").set("margin-bottom", "6px");
 
-        MemoryBuffer buffer = new MemoryBuffer();
-        Upload upload = new Upload(buffer);
-        upload.setAcceptedFileTypes("image/jpeg", "image/png");
-        upload.setMaxFileSize(5 * 1024 * 1024);
-        upload.setMaxFiles(1);
-        upload.setWidthFull();
-        upload.setUploadButton(new Button("📷 Pilih Foto Bukti"));
-        upload.setDropLabel(new Span("Atau seret foto ke sini"));
-
         Span uploadStatus = new Span("");
         uploadStatus.getStyle().set("color", "#0D9488").set("font-size", "0.85rem").set("font-weight", "600").set("display", "block").set("margin-top", "6px");
 
-        upload.addSucceededListener(event -> {
+        Upload upload = new Upload(event -> {
             try {
                 String originalName = event.getFileName();
                 String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : ".jpg";
@@ -129,8 +119,8 @@ public class PetugasSelesaikanView extends Div implements BeforeEnterObserver {
                 File dir = new File(uploadsDir);
                 if (!dir.exists()) dir.mkdirs();
 
-                InputStream is = buffer.getInputStream();
-                try (FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
+                try (InputStream is = event.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
                     byte[] buf = new byte[1024];
                     int len;
                     while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
@@ -141,6 +131,12 @@ public class PetugasSelesaikanView extends Div implements BeforeEnterObserver {
                 UI.getCurrent().access(() -> uploadStatus.setText("❌ Gagal upload: " + ex.getMessage()));
             }
         });
+        upload.setAcceptedFileTypes("image/jpeg", "image/png");
+        upload.setMaxFileSize(5 * 1024 * 1024);
+        upload.setMaxFiles(1);
+        upload.setWidthFull();
+        upload.setUploadButton(new Button("📷 Pilih Foto Bukti"));
+        upload.setDropLabel(new Span("Atau seret foto ke sini"));
 
         formCard.add(fotoLabel, upload, uploadStatus);
 

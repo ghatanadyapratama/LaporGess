@@ -11,7 +11,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -161,6 +160,7 @@ public class BuatLaporanView extends Div implements BeforeEnterObserver {
         return bar;
     }
 
+    @SuppressWarnings("deprecation")
     private Div buildBody() {
         Div body = new Div();
         body.addClassName("d-body");
@@ -241,8 +241,33 @@ public class BuatLaporanView extends Div implements BeforeEnterObserver {
         Span photoLabel = new Span("Bukti Foto");
         photoLabel.addClassName("d-input-label");
 
-        MemoryBuffer buffer = new MemoryBuffer();
-        Upload upload = new Upload(buffer);
+        // Track uploaded file
+        Span uploadStatus = new Span("");
+        uploadStatus.getStyle().set("color", "#0D9488").set("font-size", "0.88rem").set("font-weight", "600");
+
+        Upload upload = new Upload(event -> {
+            try {
+                String originalName = event.getFileName();
+                String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : ".jpg";
+                String uniqueName = "laporan_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12) + ext;
+
+                // Save to uploads folder
+                String uploadsDir = "src/main/resources/META-INF/resources/uploads/";
+                File dir = new File(uploadsDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                try (InputStream is = event.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
+                }
+                uploadedFileUrl = "uploads/" + uniqueName;
+                UI.getCurrent().access(() -> uploadStatus.setText("✔ Foto berhasil dipilih: " + originalName));
+            } catch (Exception ex) {
+                UI.getCurrent().access(() -> uploadStatus.setText("❌ Gagal mengunggah: " + ex.getMessage()));
+            }
+        });
         upload.setAcceptedFileTypes("image/jpeg", "image/png", "image/gif");
         upload.setMaxFileSize(5 * 1024 * 1024); // 5 MB
         upload.setMaxFiles(1);
@@ -258,34 +283,6 @@ public class BuatLaporanView extends Div implements BeforeEnterObserver {
             "</div>");
         upload.setUploadButton(new Button("Pilih Foto"));
         upload.setDropLabel(new Span("Atau seret foto ke sini"));
-
-        // Track uploaded file
-        Span uploadStatus = new Span("");
-        uploadStatus.getStyle().set("color", "#0D9488").set("font-size", "0.88rem").set("font-weight", "600");
-
-        upload.addSucceededListener(event -> {
-            try {
-                String originalName = event.getFileName();
-                String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : ".jpg";
-                String uniqueName = "laporan_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12) + ext;
-
-                // Save to uploads folder
-                String uploadsDir = "src/main/resources/META-INF/resources/uploads/";
-                File dir = new File(uploadsDir);
-                if (!dir.exists()) dir.mkdirs();
-
-                InputStream is = buffer.getInputStream();
-                try (FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
-                }
-                uploadedFileUrl = "uploads/" + uniqueName;
-                UI.getCurrent().access(() -> uploadStatus.setText("✔ Foto berhasil dipilih: " + originalName));
-            } catch (Exception ex) {
-                UI.getCurrent().access(() -> uploadStatus.setText("❌ Gagal mengunggah: " + ex.getMessage()));
-            }
-        });
 
         photoCol.add(photoLabel, upload, uploadStatus);
         formCard.add(photoCol);
