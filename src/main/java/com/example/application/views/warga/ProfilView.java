@@ -10,8 +10,16 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.UUID;
 
 @Route(value = "profil", layout = BlankLayout.class)
 @PageTitle("Profil Anda - Lapor Gess")
@@ -142,7 +150,7 @@ public class ProfilView extends Div {
 
         Div av = new Div();
         av.addClassName("d-avatar");
-        av.add(new Span(getInitials()));
+        av.add(getAvatarComponent());
 
         right.add(badge, bell, av);
         bar.add(right);
@@ -170,7 +178,7 @@ public class ProfilView extends Div {
         avatarWrapper.addClassName("pf-avatar-wrapper");
         Div bigAvatar = new Div();
         bigAvatar.addClassName("pf-big-avatar");
-        bigAvatar.add(new Span(getInitials()));
+        bigAvatar.add(getAvatarComponent());
         avatarWrapper.add(bigAvatar);
 
         Div nameBlock = new Div();
@@ -344,11 +352,21 @@ public class ProfilView extends Div {
         Div content = new Div();
         content.addClassName("ep-content");
 
+        // Track the photo profile url array to capture it in lambdas
+        final String[] tempFotoProfilUrl = new String[] { currentUser != null ? currentUser.getFotoProfil() : null };
+
         Div photoSection = new Div();
         photoSection.addClassName("ep-photo-section");
         Div photoAvatar = new Div();
         photoAvatar.addClassName("ep-photo-avatar");
-        photoAvatar.add(new Span(getInitials()));
+        if (currentUser != null && currentUser.getFotoProfil() != null && !currentUser.getFotoProfil().isEmpty()) {
+            Image img = new Image(currentUser.getFotoProfil(), "foto");
+            img.getStyle().set("width", "100%").set("height", "100%").set("border-radius", "50%").set("object-fit", "cover");
+            photoAvatar.add(img);
+        } else {
+            photoAvatar.add(new Span(getInitials()));
+        }
+
         Div photoInfo = new Div();
         photoInfo.addClassName("ep-photo-info");
         Span photoLabel = new Span("Foto Profil");
@@ -356,6 +374,55 @@ public class ProfilView extends Div {
         Span photoHint = new Span("Disarankan ukuran 1:1, maksimal 2MB (JPG/PNG).");
         photoHint.addClassName("ep-photo-hint");
         photoInfo.add(photoLabel, photoHint);
+
+        Upload photoUpload = new Upload(event -> {
+            try {
+                String originalName = event.getFileName();
+                String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : ".jpg";
+                String uniqueName = "avatar_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12) + ext;
+
+                // Coba simpan ke folder static resources agar bisa diakses via URL
+                // Pertama coba path development (src/main/resources)
+                String projectDir = System.getProperty("user.dir");
+                File dir = new File(projectDir, "src/main/resources/META-INF/resources/uploads/");
+                if (!dir.exists()) {
+                    // Kalau tidak ada (misal running dari JAR), simpan ke folder "uploads" di working dir
+                    dir = new File(projectDir, "uploads");
+                }
+                if (!dir.exists()) dir.mkdirs();
+
+                try (InputStream is = event.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
+                }
+                String newFotoUrl = "uploads/" + uniqueName;
+                tempFotoProfilUrl[0] = newFotoUrl;
+
+                UI.getCurrent().access(() -> {
+                    photoAvatar.removeAll();
+                    Image tempImg = new Image(newFotoUrl, "preview");
+                    tempImg.getStyle().set("width", "100%").set("height", "100%").set("border-radius", "50%").set("object-fit", "cover");
+                    photoAvatar.add(tempImg);
+                    Notification.show("Foto profil berhasil dipilih!");
+                });
+            } catch (Exception ex) {
+                Notification.show("Gagal mengunggah foto: " + ex.getMessage());
+            }
+        });
+        photoUpload.setAcceptedFileTypes("image/jpeg", "image/png");
+        photoUpload.setMaxFileSize(2 * 1024 * 1024); // 2 MB
+        photoUpload.setMaxFiles(1);
+
+        Button selectBtn = new Button("Unggah Foto");
+        selectBtn.getStyle().set("background", "#F1F5F9").set("color", "#334155")
+            .set("border-radius", "8px").set("font-size", "0.85rem").set("font-weight", "600").set("cursor", "pointer").set("border", "none").set("padding", "6px 12px");
+        photoUpload.setUploadButton(selectBtn);
+        photoUpload.setDropLabel(new Span(""));
+        photoUpload.getStyle().set("margin-top", "8px");
+
+        photoInfo.add(photoUpload);
         photoSection.add(photoAvatar, photoInfo);
         content.add(photoSection);
 
@@ -452,7 +519,24 @@ public class ProfilView extends Div {
         saveBtn.addClassName("ep-save-btn");
         saveBtn.addClickListener(e -> {
             if (currentUser != null) {
-                currentUser.setUsername(usernameField.getValue());
+                String newUsername = usernameField.getValue().trim();
+                
+                if (newUsername.isEmpty()) {
+                    Notification.show("Username tidak boleh kosong!", 3000, Notification.Position.BOTTOM_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
+                }
+
+                // Check if username changed and is already taken
+                if (!newUsername.equalsIgnoreCase(currentUser.getUsername())) {
+                    if (penggunaRepository.findByUsername(newUsername).isPresent()) {
+                        Notification.show("Username sudah digunakan oleh orang lain!", 3000, Notification.Position.BOTTOM_CENTER)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        return;
+                    }
+                }
+
+                currentUser.setUsername(newUsername);
                 currentUser.setEmail(emailField.getValue());
                 currentUser.setTelepon(teleponField.getValue());
                 currentUser.setJenisKelamin(jenisKelaminSelect.getValue());
@@ -461,7 +545,13 @@ public class ProfilView extends Div {
                 currentUser.setNomorRumah(nomorRumahField.getValue());
                 currentUser.setRtRw(rtRwField.getValue());
                 currentUser.setKecamatan(kecamatanField.getValue());
+                
+                if (tempFotoProfilUrl[0] != null) {
+                    currentUser.setFotoProfil(tempFotoProfilUrl[0]);
+                }
+                
                 penggunaRepository.save(currentUser);
+                SessionManager.setUsername(newUsername);
                 
                 Notification notif = new Notification("Profil berhasil diperbarui!", 3000, Notification.Position.BOTTOM_CENTER);
                 notif.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -476,8 +566,6 @@ public class ProfilView extends Div {
         dialog.add(footer);
 
         overlay.add(dialog);
-        overlay.addClickListener(e -> hideModal());
-        dialog.addClickListener(e -> e.getSource());
 
         return overlay;
     }
@@ -521,6 +609,16 @@ public class ProfilView extends Div {
 
     private void hideModal() {
         modalOverlay.removeClassName("ep-overlay-visible");
+    }
+
+    private com.vaadin.flow.component.Component getAvatarComponent() {
+        if (currentUser != null && currentUser.getFotoProfil() != null && !currentUser.getFotoProfil().isEmpty()) {
+            Image img = new Image(currentUser.getFotoProfil(), "foto");
+            img.getStyle().set("width", "100%").set("height", "100%").set("border-radius", "50%").set("object-fit", "cover");
+            return img;
+        } else {
+            return new Span(getInitials());
+        }
     }
     
     private String getInitials() {

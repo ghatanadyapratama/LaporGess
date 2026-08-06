@@ -3,6 +3,7 @@ package com.example.application.views.admin;
 import com.example.application.model.Pengguna;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.views.warga.BlankLayout;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -13,12 +14,17 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.component.datepicker.DatePicker;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Route(value = "admin/pengguna", layout = BlankLayout.class)
@@ -171,7 +177,23 @@ public class AdminPenggunaView extends Div {
         userCell.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px");
         Div avatar = new Div();
         avatar.getStyle().set("width", "36px").set("height", "36px").set("border-radius", "50%")
-            .set("background-color", "#E2E8F0").set("flex-shrink", "0");
+            .set("background-color", "#E2E8F0").set("flex-shrink", "0")
+            .set("display", "flex").set("align-items", "center").set("justify-content", "center")
+            .set("overflow", "hidden").set("font-weight", "700").set("font-size", "0.85rem").set("color", "#64748B");
+        if (u.getFotoProfil() != null && !u.getFotoProfil().isEmpty()) {
+            Image fotoImg = new Image(u.getFotoProfil(), "foto");
+            fotoImg.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+            avatar.add(fotoImg);
+        } else {
+            String initials = "U";
+            if (u.getNamaLengkap() != null && !u.getNamaLengkap().isEmpty()) {
+                String[] parts = u.getNamaLengkap().trim().split(" ");
+                initials = parts.length > 1
+                    ? (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase()
+                    : parts[0].substring(0, 1).toUpperCase();
+            }
+            avatar.add(new Span(initials));
+        }
         Div nameCol = new Div();
         Span nameTxt = new Span(u.getNamaLengkap() != null ? u.getNamaLengkap() : "-");
         nameTxt.getStyle().set("font-weight", "700").set("color", "#1E293B").set("display", "block");
@@ -254,16 +276,72 @@ public class AdminPenggunaView extends Div {
         headerDiv.add(titleSpan, btnClose);
         dialog.getHeader().add(headerDiv);
 
-        // Avatar row
+        // Avatar row with photo upload
+        final String[] tempFotoUrl = { u.getFotoProfil() };
+
         Div avatarRow = new Div();
         avatarRow.addClassName("user-dialog-avatar-row");
+
         Div avatarCircle = new Div();
         avatarCircle.addClassName("user-dialog-avatar-circle");
+        avatarCircle.getStyle().set("display", "flex").set("align-items", "center").set("justify-content", "center")
+            .set("overflow", "hidden").set("font-weight", "700").set("font-size", "1.2rem").set("color", "#64748B");
+        // Show current photo or initials
+        if (u.getFotoProfil() != null && !u.getFotoProfil().isEmpty()) {
+            Image av = new Image(u.getFotoProfil(), "foto");
+            av.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+            avatarCircle.add(av);
+        } else {
+            String ini = isNew ? "+" : (u.getNamaLengkap() != null && !u.getNamaLengkap().isEmpty()
+                ? u.getNamaLengkap().trim().substring(0, 1).toUpperCase() : "U");
+            avatarCircle.add(new Span(ini));
+        }
+
         Div avatarInfo = new Div();
         avatarInfo.addClassName("user-dialog-avatar-info");
         Span idText = new Span("ID Pengguna: " + (isNew ? "Baru" : "USR-" + u.getId()));
         idText.addClassName("user-dialog-avatar-id");
-        avatarInfo.add(idText);
+
+        // Upload button untuk foto profil
+        Upload photoUpload = new Upload(event -> {
+            try {
+                String originalName = event.getFileName();
+                String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : ".jpg";
+                String uniqueName = "avatar_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12) + ext;
+                String projectDir = System.getProperty("user.dir");
+                File dir = new File(projectDir, "src/main/resources/META-INF/resources/uploads/");
+                if (!dir.exists()) dir = new File(projectDir, "uploads");
+                if (!dir.exists()) dir.mkdirs();
+                try (InputStream is = event.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(new File(dir, uniqueName))) {
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = is.read(buf)) > 0) fos.write(buf, 0, len);
+                }
+                tempFotoUrl[0] = "uploads/" + uniqueName;
+                UI.getCurrent().access(() -> {
+                    avatarCircle.removeAll();
+                    Image prev = new Image(tempFotoUrl[0], "preview");
+                    prev.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+                    avatarCircle.add(prev);
+                });
+            } catch (Exception ex) {
+                Notification.show("Gagal upload: " + ex.getMessage(), 3000, Notification.Position.TOP_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        photoUpload.setAcceptedFileTypes("image/jpeg", "image/png");
+        photoUpload.setMaxFileSize(2 * 1024 * 1024);
+        photoUpload.setMaxFiles(1);
+        Button uploadBtn = new Button("📷 Upload Foto");
+        uploadBtn.getStyle().set("background", "#F1F5F9").set("color", "#334155")
+            .set("border", "none").set("border-radius", "8px").set("font-size", "0.8rem")
+            .set("font-weight", "600").set("cursor", "pointer").set("padding", "5px 10px");
+        photoUpload.setUploadButton(uploadBtn);
+        photoUpload.setDropLabel(new Span(""));
+        photoUpload.getStyle().set("margin-top", "4px");
+
+        avatarInfo.add(idText, photoUpload);
         avatarRow.add(avatarCircle, avatarInfo);
 
         // Grid fields
@@ -344,6 +422,9 @@ public class AdminPenggunaView extends Div {
             u.setTanggalLahir(birthField.getValue());
             u.setJenisKelamin(genderBox.getValue());
             u.setRtRw(areaField.getValue());
+            if (tempFotoUrl[0] != null) {
+                u.setFotoProfil(tempFotoUrl[0]);
+            }
             
             penggunaRepository.save(u);
             loadDataAndRefresh();

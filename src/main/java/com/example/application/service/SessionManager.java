@@ -23,6 +23,13 @@ public class SessionManager {
         }
     }
 
+    public static void setUsername(String username) {
+        VaadinSession session = VaadinSession.getCurrent();
+        if (session != null) {
+            session.setAttribute(KEY_USERNAME, username);
+        }
+    }
+
     public static void logout() {
         VaadinSession session = VaadinSession.getCurrent();
         if (session != null) {
