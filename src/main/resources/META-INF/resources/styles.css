@@ -5566,3 +5566,179 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     color: white !important;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   LAPORAN SAYA - FILTER ROW (Search + Status)
+═══════════════════════════════════════════════════════════ */
+.ls-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.ls-search-field {
+    flex: 1;
+    min-width: 200px;
+}
+.ls-search-field::part(input-field) {
+    border-radius: 12px;
+    background: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    padding: 0 14px;
+}
+.ls-filter-select {
+    min-width: 160px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LAPORAN DETAIL VIEW
+═══════════════════════════════════════════════════════════ */
+.ld-body {
+    padding: 24px 32px;
+    display: block;
+}
+.ld-card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+    max-width: 860px;
+    flex-shrink: 0;
+    margin-bottom: 40px; /* add some bottom margin so it doesn't stick to the bottom */
+}
+.ld-img-wrapper {
+    width: 100%;
+    max-height: 320px;
+    overflow: hidden;
+    background: #F1F5F9;
+}
+.ld-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.ld-header-section {
+    padding: 24px 28px 0 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ld-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.ld-judul {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0;
+}
+.ld-status-badge {
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 5px 14px;
+    border-radius: 8px;
+    letter-spacing: 0.04em;
+}
+.ld-kode {
+    font-size: 0.82rem;
+    color: #94A3B8;
+    font-weight: 500;
+}
+.ld-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 20px 28px;
+    border-bottom: 1px solid #F1F5F9;
+}
+.ld-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+.ld-info-icon {
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+.ld-info-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ld-info-label {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ld-info-value {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #334155;
+}
+.ld-desc-section {
+    padding: 20px 28px;
+    border-top: 1px solid #F1F5F9;
+}
+.ld-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1E293B;
+    margin: 0 0 10px 0;
+}
+.ld-desc-text {
+    font-size: 0.92rem;
+    color: #475569;
+    line-height: 1.7;
+    margin: 0;
+}
+.ld-catatan-section {
+    padding: 20px 28px;
+    border-top: 1px solid #F1F5F9;
+    background: #FEF2F2;
+}
+.ld-bukti-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    max-height: 240px;
+}
+
+/* d-lap-card fix - ensure content is visible */
+.d-lap-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+.d-lap-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.d-lap-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.d-lap-judul {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1E293B;
+}
+.d-lap-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.d-lap-meta-row {
+    font-size: 0.8rem;
+    color: #64748B;
+}
+

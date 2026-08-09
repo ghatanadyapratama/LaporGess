@@ -254,10 +254,11 @@ public class WargaDashboardView extends Div implements BeforeEnterObserver {
     private Div laporanCard(Laporan laporan) {
         Div card = new Div();
         card.addClassName("d-lap-card");
+        card.getStyle().set("cursor", "pointer");
 
         Div imgBox = new Div();
         imgBox.addClassName("ls-card-img-box");
-        imgBox.getStyle().set("width", "70px").set("height", "70px").set("border-radius", "10px");
+        imgBox.getStyle().set("width", "70px").set("height", "70px").set("border-radius", "10px").set("flex-shrink", "0");
         if (laporan.getFotoUrl() != null && !laporan.getFotoUrl().isEmpty()) {
             Image image = new Image(laporan.getFotoUrl(), "Foto Laporan");
             image.addClassName("ls-card-img");
@@ -276,12 +277,12 @@ public class WargaDashboardView extends Div implements BeforeEnterObserver {
         topRow.addClassName("d-lap-top");
         Span judulSpan = new Span(laporan.getJudul());
         judulSpan.addClassName("d-lap-judul");
-        
+
         String statusText = laporan.getStatus().name();
         String badgeCls = "ls-badge-" + statusText.toLowerCase();
         Span badge = new Span(statusText);
         badge.addClassName(badgeCls);
-        
+
         topRow.add(judulSpan, badge);
 
         Div meta = new Div();
@@ -293,6 +294,11 @@ public class WargaDashboardView extends Div implements BeforeEnterObserver {
         meta.add(lokasiSpan, tglSpan);
 
         content.add(topRow, meta);
+        card.add(content);
+
+        // Click to view detail
+        card.addClickListener(e -> UI.getCurrent().navigate("laporan-detail/" + laporan.getId()));
+
         return card;
     }
 

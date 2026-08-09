@@ -30,6 +30,14 @@ public class SessionManager {
         }
     }
 
+    public static void updateProfilData(String username, String namaLengkap) {
+        VaadinSession session = VaadinSession.getCurrent();
+        if (session != null) {
+            session.setAttribute(KEY_USERNAME, username);
+            session.setAttribute(KEY_NAMA, namaLengkap);
+        }
+    }
+
     public static void logout() {
         VaadinSession session = VaadinSession.getCurrent();
         if (session != null) {

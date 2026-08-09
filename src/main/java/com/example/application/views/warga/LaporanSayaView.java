@@ -137,37 +137,45 @@ public class LaporanSayaView extends Div implements BeforeEnterObserver {
         Div body = new Div();
         body.addClassName("d-body");
 
-        // Header row
-        Div headerRow = new Div();
-        headerRow.addClassName("d-list-header");
-        H2 title = new H2("Semua Laporan");
-        title.addClassName("d-list-title");
+        // Search + Filter row (matches screenshot design)
+        Div filterRow = new Div();
+        filterRow.addClassName("ls-filter-row");
+
+        TextField searchField = new TextField();
+        searchField.setPlaceholder("Cari laporan Anda...");
+        searchField.addClassName("ls-search-field");
 
         Select<String> filterSelect = new Select<>();
-        filterSelect.setItems("Semua", "PENDING", "DIPROSES", "SELESAI", "DITOLAK");
-        filterSelect.setValue("Semua");
-        filterSelect.getStyle().set("width", "150px");
+        filterSelect.setItems("Semua Status", "PENDING", "DIPROSES", "SELESAI", "DITOLAK");
+        filterSelect.setValue("Semua Status");
+        filterSelect.addClassName("ls-filter-select");
 
-        headerRow.add(title, filterSelect);
-        body.add(headerRow);
+        filterRow.add(searchField, filterSelect);
+        body.add(filterRow);
 
-        // Laporan list container
+        // Laporan grid container
         Div listContainer = new Div();
         listContainer.addClassName("ls-list-container");
 
         String username = SessionManager.getUsername();
         List<Laporan> laporanList = laporanService.getLaporanByWarga(username);
 
-        filterSelect.addValueChangeListener(ev -> {
+        Runnable refresh = () -> {
             listContainer.removeAll();
-            String filter = ev.getValue();
+            String query = searchField.getValue().trim().toLowerCase();
+            String filter = filterSelect.getValue();
             laporanList.stream()
-                .filter(l -> "Semua".equals(filter) || l.getStatus().name().equals(filter))
+                .filter(l -> ("Semua Status".equals(filter) || l.getStatus().name().equals(filter))
+                    && (query.isEmpty() || l.getJudul().toLowerCase().contains(query)
+                        || (l.getLokasi() != null && l.getLokasi().toLowerCase().contains(query))))
                 .forEach(l -> listContainer.add(buildLaporanCard(l)));
             if (listContainer.getChildren().count() == 0) {
                 listContainer.add(buildEmptyState());
             }
-        });
+        };
+
+        searchField.addValueChangeListener(ev -> refresh.run());
+        filterSelect.addValueChangeListener(ev -> refresh.run());
 
         if (laporanList.isEmpty()) {
             listContainer.add(buildEmptyState());
@@ -182,6 +190,7 @@ public class LaporanSayaView extends Div implements BeforeEnterObserver {
     private Div buildLaporanCard(Laporan laporan) {
         Div card = new Div();
         card.addClassName("ls-card");
+        card.getStyle().set("cursor", "pointer");
 
         // Left side: image
         Div imgBox = new Div();
@@ -220,14 +229,18 @@ public class LaporanSayaView extends Div implements BeforeEnterObserver {
 
         Div metaRow = new Div();
         metaRow.addClassName("ls-card-meta");
-        Span kategoriSpan = new Span("🏷 " + laporan.getKategori());
+        Span kategoriSpan = new Span("Kategori: " + laporan.getKategori());
         kategoriSpan.getStyle().set("font-size", "0.8rem").set("color", "#94A3B8");
-        Span dateSpan = new Span("🗓 " + laporan.getDibuatPada().format(FMT));
+        Span dateSpan = new Span(laporan.getDibuatPada().format(FMT));
         dateSpan.getStyle().set("font-size", "0.8rem").set("color", "#94A3B8");
         metaRow.add(kategoriSpan, dateSpan);
 
         info.add(topRow, locRow, metaRow);
         card.add(imgBox, info);
+
+        // Click to view detail
+        card.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("laporan-detail/" + laporan.getId())));
+
         return card;
     }
 

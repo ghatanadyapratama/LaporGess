@@ -550,16 +550,22 @@ public class ProfilView extends Div {
                     currentUser.setFotoProfil(tempFotoProfilUrl[0]);
                 }
                 
-                penggunaRepository.save(currentUser);
-                SessionManager.setUsername(newUsername);
-                
-                Notification notif = new Notification("Profil berhasil diperbarui!", 3000, Notification.Position.BOTTOM_CENTER);
-                notif.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                notif.open();
-                
-                getUI().ifPresent(ui -> ui.getPage().reload());
+                try {
+                    penggunaRepository.save(currentUser);
+                    SessionManager.updateProfilData(newUsername, currentUser.getNamaLengkap());
+                    
+                    Notification notif = new Notification("Profil berhasil diperbarui!", 3000, Notification.Position.BOTTOM_CENTER);
+                    notif.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    notif.open();
+                    
+                    getUI().ifPresent(ui -> ui.getPage().reload());
+                    hideModal();
+                } catch (Exception ex) {
+                    Notification notif = new Notification("Gagal menyimpan profil: " + ex.getMessage(), 5000, Notification.Position.BOTTOM_CENTER);
+                    notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    notif.open();
+                }
             }
-            hideModal();
         });
 
         footer.add(cancelBtn, saveBtn);
