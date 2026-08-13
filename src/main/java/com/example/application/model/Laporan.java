@@ -54,13 +54,17 @@ public class Laporan {
     @Column(name = "dibuat_pada")
     private LocalDateTime dibuatPada = LocalDateTime.now();
 
+    @Column(name = "menunggu_konfirmasi_pada")
+    private LocalDateTime menungguKonfirmasiPada;
+
     @Column(name = "diselesaikan_pada")
     private LocalDateTime diselesaikanPada;
 
     public enum Status {
         PENDING,    // Baru dikirim, menunggu admin
         DIPROSES,   // Admin sudah assign ke petugas
-        SELESAI,    // Petugas sudah selesaikan
+        MENUNGGU_KONFIRMASI, // Petugas selesai, menunggu review warga
+        SELESAI,    // Petugas sudah selesaikan dan warga konfirmasi
         DITOLAK     // Admin menolak laporan
     }
 
@@ -107,6 +111,9 @@ public class Laporan {
 
     public LocalDateTime getDibuatPada() { return dibuatPada; }
     public void setDibuatPada(LocalDateTime dibuatPada) { this.dibuatPada = dibuatPada; }
+
+    public LocalDateTime getMenungguKonfirmasiPada() { return menungguKonfirmasiPada; }
+    public void setMenungguKonfirmasiPada(LocalDateTime menungguKonfirmasiPada) { this.menungguKonfirmasiPada = menungguKonfirmasiPada; }
 
     public LocalDateTime getDiselesaikanPada() { return diselesaikanPada; }
     public void setDiselesaikanPada(LocalDateTime diselesaikanPada) { this.diselesaikanPada = diselesaikanPada; }

@@ -2,8 +2,11 @@ package com.example.application.views.warga;
 
 import com.example.application.model.Laporan;
 import com.example.application.repository.LaporanRepository;
+import com.example.application.service.LaporanService;
 import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.router.*;
 
@@ -15,10 +18,12 @@ import java.util.Optional;
 public class LaporanDetailView extends Div implements BeforeEnterObserver {
 
     private final LaporanRepository laporanRepository;
+    private final LaporanService laporanService;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm");
 
-    public LaporanDetailView(LaporanRepository laporanRepository) {
+    public LaporanDetailView(LaporanRepository laporanRepository, LaporanService laporanService) {
         this.laporanRepository = laporanRepository;
+        this.laporanService = laporanService;
         addClassName("d-root");
     }
 
@@ -283,6 +288,25 @@ public class LaporanDetailView extends Div implements BeforeEnterObserver {
 
             catatanSection.add(catatanTitle, catatanText);
             card.add(catatanSection);
+        }
+
+        // ── Tombol Konfirmasi ───────────────────
+        if (laporan.getStatus() == Laporan.Status.MENUNGGU_KONFIRMASI) {
+            Div actionSection = new Div();
+            actionSection.getStyle().set("margin-top", "24px").set("text-align", "center");
+            
+            Button konfirmasiBtn = new Button("Konfirmasi Selesai", e -> {
+                laporanService.konfirmasiSelesaiOlehWarga(laporan.getId());
+                UI.getCurrent().getPage().reload();
+            });
+            konfirmasiBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+            konfirmasiBtn.getStyle().set("width", "100%").set("padding", "12px").set("border-radius", "8px").set("font-weight", "600");
+            
+            Paragraph infoText = new Paragraph("Petugas telah menyelesaikan laporan ini. Silakan konfirmasi jika laporan sudah benar-benar selesai untuk mendapatkan poin.");
+            infoText.getStyle().set("color", "#64748B").set("font-size", "14px").set("margin-top", "8px");
+            
+            actionSection.add(konfirmasiBtn, infoText);
+            card.add(actionSection);
         }
 
         body.add(card);

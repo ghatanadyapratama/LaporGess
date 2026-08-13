@@ -23,4 +23,6 @@ public interface LaporanRepository extends JpaRepository<Laporan, Integer> {
     long countByWarga(Pengguna warga);
 
     List<Laporan> findByPetugasAndStatus(Pengguna petugas, Laporan.Status status);
+    
+    List<Laporan> findByPetugasAndStatusIn(Pengguna petugas, List<Laporan.Status> statuses);
 }

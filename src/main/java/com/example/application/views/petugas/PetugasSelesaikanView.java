@@ -167,7 +167,7 @@ public class PetugasSelesaikanView extends Div implements BeforeEnterObserver {
             }
             try {
                 laporanService.selesaikanLaporan(laporanId, catatan, uploadedBuktiUrl);
-                Notification n = new Notification("Laporan penyelesaian berhasil dikirim! +100 poin untuk warga. ✅", 4000, Notification.Position.BOTTOM_CENTER);
+                Notification n = new Notification("Laporan penyelesaian berhasil dikirim! Menunggu konfirmasi warga. ✅", 4000, Notification.Position.BOTTOM_CENTER);
                 n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 n.open();
                 UI.getCurrent().navigate("petugas/riwayat-selesai");

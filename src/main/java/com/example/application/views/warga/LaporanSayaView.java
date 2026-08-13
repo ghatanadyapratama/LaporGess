@@ -146,7 +146,7 @@ public class LaporanSayaView extends Div implements BeforeEnterObserver {
         searchField.addClassName("ls-search-field");
 
         Select<String> filterSelect = new Select<>();
-        filterSelect.setItems("Semua Status", "PENDING", "DIPROSES", "SELESAI", "DITOLAK");
+        filterSelect.setItems("Semua Status", "PENDING", "DIPROSES", "MENUNGGU_KONFIRMASI", "SELESAI", "DITOLAK");
         filterSelect.setValue("Semua Status");
         filterSelect.addClassName("ls-filter-select");
 

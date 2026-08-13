@@ -249,6 +249,16 @@ public class NotifikasiView extends Div {
 
             contentBlock.add(itemTitle, itemDesc, itemTime);
             card.add(contentBlock);
+            
+            if (notif.getLaporanId() != null) {
+                card.getStyle().set("cursor", "pointer");
+                card.addClickListener(e -> {
+                    notif.setDibaca(true);
+                    notifikasiRepository.save(notif);
+                    getUI().ifPresent(ui -> ui.navigate("laporan-detail/" + notif.getLaporanId()));
+                });
+            }
+            
             notifListContainer.add(card);
         }
     }

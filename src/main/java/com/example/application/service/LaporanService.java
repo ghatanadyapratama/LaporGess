@@ -4,6 +4,8 @@ import com.example.application.model.Laporan;
 import com.example.application.model.Pengguna;
 import com.example.application.repository.LaporanRepository;
 import com.example.application.repository.PenggunaRepository;
+import com.example.application.model.Notifikasi;
+import com.example.application.repository.NotifikasiRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ public class LaporanService {
 
     private final LaporanRepository laporanRepository;
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
 
-    public LaporanService(LaporanRepository laporanRepository, PenggunaRepository penggunaRepository) {
+    public LaporanService(LaporanRepository laporanRepository, PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.laporanRepository = laporanRepository;
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
     }
 
     @Transactional
@@ -44,7 +48,18 @@ public class LaporanService {
         warga.setTotalLaporan((warga.getTotalLaporan() == null ? 0 : warga.getTotalLaporan()) + 1);
         penggunaRepository.save(warga);
 
-        return laporanRepository.save(laporan);
+        Laporan savedLaporan = laporanRepository.save(laporan);
+        
+        notifikasiRepository.save(new Notifikasi(
+            warga,
+            "Laporan Anda dengan kode " + savedLaporan.getKodeLaporan() + " berhasil dibuat.",
+            "INFO",
+            LocalDateTime.now(),
+            false,
+            savedLaporan.getId()
+        ));
+
+        return savedLaporan;
     }
 
     @Transactional
@@ -56,7 +71,27 @@ public class LaporanService {
 
         laporan.setPetugas(petugas);
         laporan.setStatus(Laporan.Status.DIPROSES);
-        return laporanRepository.save(laporan);
+        Laporan savedLaporan = laporanRepository.save(laporan);
+
+        notifikasiRepository.save(new Notifikasi(
+            petugas,
+            "Anda ditugaskan untuk laporan kode " + savedLaporan.getKodeLaporan() + ".",
+            "WARNING",
+            LocalDateTime.now(),
+            false,
+            savedLaporan.getId()
+        ));
+
+        notifikasiRepository.save(new Notifikasi(
+            laporan.getWarga(),
+            "Laporan Anda (kode " + savedLaporan.getKodeLaporan() + ") sedang diproses oleh petugas.",
+            "INFO",
+            LocalDateTime.now(),
+            false,
+            savedLaporan.getId()
+        ));
+
+        return savedLaporan;
     }
 
     @Transactional
@@ -64,9 +99,35 @@ public class LaporanService {
         Laporan laporan = laporanRepository.findById(laporanId)
                 .orElseThrow(() -> new IllegalArgumentException("Laporan tidak ditemukan: " + laporanId));
 
-        laporan.setStatus(Laporan.Status.SELESAI);
+        laporan.setStatus(Laporan.Status.MENUNGGU_KONFIRMASI);
         laporan.setCatatan(catatan);
         laporan.setFotoBuktiUrl(fotoBuktiUrl);
+        laporan.setMenungguKonfirmasiPada(LocalDateTime.now());
+
+        Laporan savedLaporan = laporanRepository.save(laporan);
+
+        notifikasiRepository.save(new Notifikasi(
+            laporan.getWarga(),
+            "Petugas telah menyelesaikan laporan " + savedLaporan.getKodeLaporan() + ". Mohon konfirmasi penyelesaian.",
+            "WARNING",
+            LocalDateTime.now(),
+            false,
+            savedLaporan.getId()
+        ));
+
+        return savedLaporan;
+    }
+
+    @Transactional
+    public Laporan konfirmasiSelesaiOlehWarga(Integer laporanId) {
+        Laporan laporan = laporanRepository.findById(laporanId)
+                .orElseThrow(() -> new IllegalArgumentException("Laporan tidak ditemukan: " + laporanId));
+
+        if (laporan.getStatus() != Laporan.Status.MENUNGGU_KONFIRMASI) {
+            throw new IllegalStateException("Laporan belum dalam status menunggu konfirmasi.");
+        }
+
+        laporan.setStatus(Laporan.Status.SELESAI);
         laporan.setDiselesaikanPada(LocalDateTime.now());
 
         // Update statistik warga
@@ -80,7 +141,25 @@ public class LaporanService {
             Pengguna petugas = laporan.getPetugas();
             petugas.setTotalSelesai((petugas.getTotalSelesai() == null ? 0 : petugas.getTotalSelesai()) + 1);
             penggunaRepository.save(petugas);
+            
+            notifikasiRepository.save(new Notifikasi(
+                petugas,
+                "Laporan " + laporan.getKodeLaporan() + " telah dikonfirmasi selesai oleh warga.",
+                "SUCCESS",
+                LocalDateTime.now(),
+                false,
+                laporan.getId()
+            ));
         }
+        
+        notifikasiRepository.save(new Notifikasi(
+            warga,
+            "Terima kasih telah mengkonfirmasi penyelesaian laporan " + laporan.getKodeLaporan() + ". Poin Anda telah ditambahkan!",
+            "SUCCESS",
+            LocalDateTime.now(),
+            false,
+            laporan.getId()
+        ));
 
         return laporanRepository.save(laporan);
     }
@@ -92,7 +171,18 @@ public class LaporanService {
 
         laporan.setStatus(Laporan.Status.DITOLAK);
         laporan.setCatatanTolak(alasan);
-        return laporanRepository.save(laporan);
+        Laporan savedLaporan = laporanRepository.save(laporan);
+
+        notifikasiRepository.save(new Notifikasi(
+            laporan.getWarga(),
+            "Laporan " + savedLaporan.getKodeLaporan() + " ditolak. Alasan: " + alasan,
+            "ERROR",
+            LocalDateTime.now(),
+            false,
+            savedLaporan.getId()
+        ));
+
+        return savedLaporan;
     }
 
     @Transactional(readOnly = true)
@@ -126,7 +216,7 @@ public class LaporanService {
     public List<Laporan> getLaporanSelesaiByPetugas(String usernamePetugas) {
         Pengguna petugas = penggunaRepository.findByUsername(usernamePetugas)
                 .orElseThrow(() -> new IllegalArgumentException("Petugas tidak ditemukan"));
-        List<Laporan> list = laporanRepository.findByPetugasAndStatus(petugas, Laporan.Status.SELESAI);
+        List<Laporan> list = laporanRepository.findByPetugasAndStatusIn(petugas, List.of(Laporan.Status.SELESAI, Laporan.Status.MENUNGGU_KONFIRMASI));
         list.forEach(l -> { if (l.getWarga() != null) l.getWarga().getNamaLengkap(); if (l.getPetugas() != null) l.getPetugas().getNamaLengkap(); });
         return list;
     }

@@ -246,8 +246,8 @@ public class DatabaseInitializer implements CommandLineRunner {
         // ==== 5. Buat Notifikasi Awal ====
         Pengguna budi = penggunaRepository.findByUsername("budi").orElse(null);
         if (notifikasiRepository.count() == 0 && budi != null) {
-            notifikasiRepository.save(new Notifikasi(budi, "Selamat datang di LaporGess! Mari mulai melapor.", "INFO", LocalDateTime.now().minusDays(1), false));
-            notifikasiRepository.save(new Notifikasi(budi, "Laporan Anda 'Pohon Tumbang' sedang diproses.", "WARNING", LocalDateTime.now().minusHours(2), false));
+            notifikasiRepository.save(new Notifikasi(budi, "Selamat datang di LaporGess! Mari mulai melapor.", "INFO", LocalDateTime.now().minusDays(1), false, null));
+            notifikasiRepository.save(new Notifikasi(budi, "Laporan Anda 'Pohon Tumbang' sedang diproses.", "WARNING", LocalDateTime.now().minusHours(2), false, null));
             System.out.println("  [SEED] 2 notifikasi contoh dibuat.");
         }
 

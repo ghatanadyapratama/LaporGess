@@ -69,8 +69,12 @@ public class PetugasRiwayatSelesaiView extends Div implements BeforeEnterObserve
                 headerRow.addClassName("pt-card-header-row");
                 Span titleSpan = new Span(laporan.getJudul());
                 titleSpan.addClassName("pt-job-title");
-                Span badge = new Span("SELESAI");
+                String statusText = laporan.getStatus() == Laporan.Status.MENUNGGU_KONFIRMASI ? "MENUNGGU KONFIRMASI" : "SELESAI";
+                Span badge = new Span(statusText);
                 badge.addClassName("pt-badge-selesai");
+                if (laporan.getStatus() == Laporan.Status.MENUNGGU_KONFIRMASI) {
+                    badge.getStyle().set("background-color", "#FEF08A").set("color", "#854D0E"); // Yellowish for waiting
+                }
                 headerRow.add(titleSpan, badge);
 
                 Div locRow = new Div();

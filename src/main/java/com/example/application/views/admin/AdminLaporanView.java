@@ -157,6 +157,7 @@ public class AdminLaporanView extends Div {
         String statusClass = switch (laporan.getStatus()) {
             case PENDING -> "ad-status-menunggu";
             case DIPROSES -> "ad-status-diproses";
+            case MENUNGGU_KONFIRMASI -> "ad-status-diproses"; // Use same color as diproses or similar for waiting
             case SELESAI -> "ad-status-selesai";
             case DITOLAK -> "ad-status-ditolak";
         };
@@ -187,6 +188,7 @@ public class AdminLaporanView extends Div {
         statusBadge.addClassName(switch (laporan.getStatus()) {
             case PENDING -> "ad-status-menunggu";
             case DIPROSES -> "ad-status-diproses";
+            case MENUNGGU_KONFIRMASI -> "ad-status-diproses";
             case SELESAI -> "ad-status-selesai";
             case DITOLAK -> "ad-status-ditolak";
         });
@@ -281,7 +283,7 @@ public class AdminLaporanView extends Div {
         }
 
         // Catatan if completed
-        if (laporan.getStatus() == Laporan.Status.SELESAI && laporan.getCatatan() != null) {
+        if ((laporan.getStatus() == Laporan.Status.SELESAI || laporan.getStatus() == Laporan.Status.MENUNGGU_KONFIRMASI) && laporan.getCatatan() != null) {
             Div catatanBox = new Div();
             catatanBox.getStyle().set("background", "#E6F7F5").set("border-radius", "10px").set("padding", "14px");
             Span catatanTitle = new Span("Catatan Petugas:");

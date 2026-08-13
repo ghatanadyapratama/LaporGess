@@ -24,18 +24,22 @@ public class Notifikasi {
     @Column(name = "dibuat_pada", nullable = false)
     private LocalDateTime dibuatPada;
 
+    @Column(name = "laporan_id")
+    private Integer laporanId;
+
     @Column(nullable = false)
     private boolean dibaca;
 
     public Notifikasi() {
     }
 
-    public Notifikasi(Pengguna pengguna, String pesan, String tipe, LocalDateTime dibuatPada, boolean dibaca) {
+    public Notifikasi(Pengguna pengguna, String pesan, String tipe, LocalDateTime dibuatPada, boolean dibaca, Integer laporanId) {
         this.pengguna = pengguna;
         this.pesan = pesan;
         this.tipe = tipe;
         this.dibuatPada = dibuatPada;
         this.dibaca = dibaca;
+        this.laporanId = laporanId;
     }
 
     public Integer getId() {
@@ -84,5 +88,13 @@ public class Notifikasi {
 
     public void setDibaca(boolean dibaca) {
         this.dibaca = dibaca;
+    }
+
+    public Integer getLaporanId() {
+        return laporanId;
+    }
+
+    public void setLaporanId(Integer laporanId) {
+        this.laporanId = laporanId;
     }
 }
