@@ -3879,34 +3879,80 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     position: absolute;
     top: 55px;
     right: 32px;
-    width: 320px;
+    width: 340px;
     background: white;
     border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     border: 1px solid #F1F5F9;
     z-index: 100;
     display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.ad-notif-row {
+    display: flex;
     gap: 12px;
     align-items: flex-start;
+    padding: 12px 16px;
+    border-bottom: 1px solid #F1F5F9;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ad-notif-row:hover {
+    background: #F8FAFC;
+}
+
+.ad-notif-row:last-child {
+    border-bottom: none;
+}
+
+.ad-notif-row-unread {
+    background: #FFF7ED;
+}
+
+.ad-notif-row-unread:hover {
+    background: #FFEDD5;
+}
+
+.ad-notif-more {
+    display: block;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #EA580C;
+    border-top: 1px solid #F1F5F9;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.ad-notif-more:hover {
+    color: #C2410C;
 }
 
 .ad-notif-icon-box {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     border-radius: 50%;
     background-color: #FFEDD5;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #EA580C;
-    font-size: 1.2rem;
+    font-size: 1rem;
 }
 
 .ad-notif-content {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .ad-notif-title-row {
@@ -3918,20 +3964,25 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
 
 .ad-notif-title {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #1E293B;
 }
 
 .ad-notif-time {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #94A3B8;
+    white-space: nowrap;
+    margin-left: 8px;
 }
 
 .ad-notif-body {
-    font-size: 0.82rem;
+    font-size: 0.80rem;
     color: #64748B;
-    margin-top: 4px;
+    margin-top: 2px;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Body Content */

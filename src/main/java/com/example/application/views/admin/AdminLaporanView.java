@@ -2,6 +2,7 @@ package com.example.application.views.admin;
 
 import com.example.application.model.Laporan;
 import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.service.LaporanService;
 import com.example.application.views.warga.BlankLayout;
@@ -28,6 +29,7 @@ public class AdminLaporanView extends Div {
 
     private final LaporanService laporanService;
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
     private Div tableBody;
@@ -35,9 +37,10 @@ public class AdminLaporanView extends Div {
     private TextField searchField;
     private Select<String> filterStatus;
 
-    public AdminLaporanView(LaporanService laporanService, PenggunaRepository penggunaRepository) {
+    public AdminLaporanView(LaporanService laporanService, PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.laporanService = laporanService;
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
         addClassName("ad-root");
 
         long laporanPending = laporanService.countByStatus(Laporan.Status.PENDING);
@@ -48,7 +51,7 @@ public class AdminLaporanView extends Div {
         Div main = new Div();
         main.addClassName("ad-main");
 
-        Div topbar = AdminLayout.buildTopbar("Kelola Laporan");
+        Div topbar = AdminLayout.buildTopbar("Kelola Laporan", notifikasiRepository);
 
         Div body = new Div();
         body.addClassName("ad-body");

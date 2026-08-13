@@ -38,7 +38,7 @@ public class AdminNotifikasiView extends Div {
         main.addClassName("ad-main");
 
         // Topbar
-        Div topbar = AdminLayout.buildTopbar("Notifikasi Sistem");
+        Div topbar = AdminLayout.buildTopbar("Notifikasi Sistem", notifikasiRepository);
 
         // Scrollable Body
         Div body = new Div();

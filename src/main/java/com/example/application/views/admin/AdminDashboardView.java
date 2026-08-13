@@ -2,6 +2,7 @@ package com.example.application.views.admin;
 
 import com.example.application.model.Laporan;
 import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.service.LaporanService;
 import com.example.application.views.warga.BlankLayout;
@@ -22,10 +23,12 @@ public class AdminDashboardView extends Div {
 
     private final LaporanService laporanService;
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
 
-    public AdminDashboardView(LaporanService laporanService, PenggunaRepository penggunaRepository) {
+    public AdminDashboardView(LaporanService laporanService, PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.laporanService = laporanService;
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
         addClassName("ad-root");
 
         long laporanPending = laporanService.countByStatus(Laporan.Status.PENDING);
@@ -36,7 +39,7 @@ public class AdminDashboardView extends Div {
         Div main = new Div();
         main.addClassName("ad-main");
 
-        Div topbar = AdminLayout.buildTopbar("Dasbor");
+        Div topbar = AdminLayout.buildTopbar("Dasbor", notifikasiRepository);
 
         Div body = new Div();
         body.addClassName("ad-body");

@@ -1,6 +1,7 @@
 package com.example.application.views.admin;
 
 import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.views.warga.BlankLayout;
 import com.vaadin.flow.component.button.Button;
@@ -18,11 +19,13 @@ import java.util.List;
 public class AdminVerifikasiView extends Div {
 
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
     private Div verifList;
     private TextField search;
 
-    public AdminVerifikasiView(PenggunaRepository penggunaRepository) {
+    public AdminVerifikasiView(PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
         addClassName("ad-root");
 
         long petugasAktif = penggunaRepository.countByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.PETUGAS_LAPANGAN);
@@ -32,7 +35,7 @@ public class AdminVerifikasiView extends Div {
         Div main = new Div();
         main.addClassName("ad-main");
 
-        Div topbar = AdminLayout.buildTopbar("Verifikasi Pengguna");
+        Div topbar = AdminLayout.buildTopbar("Verifikasi Pengguna", notifikasiRepository);
 
         Div body = new Div();
         body.addClassName("ad-body");

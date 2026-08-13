@@ -1,8 +1,15 @@
 package com.example.application.views.admin;
 
+import com.example.application.model.Notifikasi;
+import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.service.SessionManager;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.*;
+
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 
 public class AdminLayout {
 
@@ -110,6 +117,19 @@ public class AdminLayout {
     }
 
     public static Div buildTopbar(String titleText) {
+        return buildTopbar(titleText, null);
+    }
+
+    public static Div buildTopbar(String titleText, NotifikasiRepository notifikasiRepository) {
+        DateTimeFormatter FMT_TIME = DateTimeFormatter.ofPattern("dd MMM, HH:mm");
+
+        // Ambil notifikasi dari DB jika repo tersedia
+        List<Notifikasi> notifList = Collections.emptyList();
+        if (notifikasiRepository != null) {
+            notifList = notifikasiRepository.findByPengguna_PeranOrderByDibuatPadaDesc(Pengguna.Peran.ADMIN);
+        }
+        long unreadCount = notifList.stream().filter(n -> !n.isDibaca()).count();
+
         Div topbar = new Div();
         topbar.addClassName("ad-topbar");
 
@@ -126,6 +146,7 @@ public class AdminLayout {
         bellIcon.getStyle().set("width", "20px").set("height", "20px");
         Div notifDot = new Div();
         notifDot.addClassName("ad-notif-dot");
+        if (unreadCount == 0) notifDot.setVisible(false);
         notifBtn.add(bellIcon, notifDot);
 
         // Popup — tersembunyi secara default
@@ -133,29 +154,67 @@ public class AdminLayout {
         notifPopup.addClassName("ad-notif-popup");
         notifPopup.setVisible(false);
 
-        Div iconBox = new Div(new Span("🔔"));
-        iconBox.addClassName("ad-notif-icon-box");
+        if (notifList.isEmpty()) {
+            // Kosong
+            Div emptyRow = new Div();
+            emptyRow.getStyle()
+                .set("padding", "20px 16px")
+                .set("text-align", "center")
+                .set("color", "#94A3B8")
+                .set("font-size", "0.88rem");
+            emptyRow.add(new Span("Tidak ada notifikasi baru."));
+            notifPopup.add(emptyRow);
+        } else {
+            // Tampilkan max 3 notifikasi terbaru
+            int max = Math.min(3, notifList.size());
+            for (int i = 0; i < max; i++) {
+                Notifikasi notif = notifList.get(i);
 
-        Div content = new Div();
-        content.addClassName("ad-notif-content");
+                String iconSymbol = switch (notif.getTipe()) {
+                    case "WARNING" -> "⚠️";
+                    case "SUCCESS" -> "✅";
+                    default -> "🔔";
+                };
 
-        Div titleRow = new Div();
-        titleRow.addClassName("ad-notif-title-row");
-        Span notifTitle = new Span("Laporan Baru Masuk!");
-        notifTitle.addClassName("ad-notif-title");
-        Span notifTime = new Span("Baru saja");
-        notifTime.addClassName("ad-notif-time");
-        titleRow.add(notifTitle, notifTime);
+                Div iconBox = new Div(new Span(iconSymbol));
+                iconBox.addClassName("ad-notif-icon-box");
 
-        Span notifBody = new Span("Pohon tumbang menutup jalan utama di area RT 02 / RW 01.");
-        notifBody.addClassName("ad-notif-body");
+                Div content = new Div();
+                content.addClassName("ad-notif-content");
 
-        content.add(titleRow, notifBody);
-        notifPopup.add(iconBox, content);
+                Div titleRow = new Div();
+                titleRow.addClassName("ad-notif-title-row");
+                Span notifTitle = new Span(notif.getTipe());
+                notifTitle.addClassName("ad-notif-title");
+                String timeStr = notif.getDibuatPada() != null ? notif.getDibuatPada().format(FMT_TIME) : "Baru saja";
+                Span notifTime = new Span(timeStr);
+                notifTime.addClassName("ad-notif-time");
+                titleRow.add(notifTitle, notifTime);
+
+                Span notifBody = new Span(notif.getPesan());
+                notifBody.addClassName("ad-notif-body");
+
+                content.add(titleRow, notifBody);
+
+                Div row = new Div();
+                row.addClassName("ad-notif-row");
+                if (!notif.isDibaca()) row.addClassName("ad-notif-row-unread");
+                row.add(iconBox, content);
+                notifPopup.add(row);
+            }
+
+            if (notifList.size() > 3) {
+                Span more = new Span("Lihat semua notifikasi →");
+                more.addClassName("ad-notif-more");
+                more.getStyle().set("cursor", "pointer");
+                more.addClickListener(e -> UI.getCurrent().navigate("admin/notifikasi"));
+                notifPopup.add(more);
+            }
+        }
 
         // Toggle popup saat bell diklik
         notifBtn.addClickListener(e -> notifPopup.setVisible(!notifPopup.isVisible()));
-        // Klik popup → navigasi ke halaman notifikasi
+        // Klik popup area kosong → navigasi ke halaman notifikasi
         notifPopup.addClickListener(e -> UI.getCurrent().navigate("admin/notifikasi"));
 
         notifWrapper.add(notifBtn, notifPopup);

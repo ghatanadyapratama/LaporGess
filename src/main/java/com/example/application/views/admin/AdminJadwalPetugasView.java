@@ -3,6 +3,7 @@ package com.example.application.views.admin;
 import com.example.application.model.JadwalShift;
 import com.example.application.model.Laporan;
 import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.service.JadwalShiftService;
 import com.example.application.service.LaporanService;
@@ -31,6 +32,7 @@ public class AdminJadwalPetugasView extends Div {
     private final JadwalShiftService jadwalShiftService;
     private final LaporanService laporanService;
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
 
     private LocalDate selectedDate;
     private boolean isEditMode = false;
@@ -48,10 +50,11 @@ public class AdminJadwalPetugasView extends Div {
     private Button btnEdit;
     private Button btnSave;
 
-    public AdminJadwalPetugasView(JadwalShiftService jadwalShiftService, LaporanService laporanService, PenggunaRepository penggunaRepository) {
+    public AdminJadwalPetugasView(JadwalShiftService jadwalShiftService, LaporanService laporanService, PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.jadwalShiftService = jadwalShiftService;
         this.laporanService = laporanService;
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
         
         this.activePetugas = penggunaRepository.findByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.PETUGAS_LAPANGAN);
         // Default to today
@@ -64,7 +67,7 @@ public class AdminJadwalPetugasView extends Div {
         Div sidebar = AdminLayout.buildSidebar("admin/jadwal-petugas", laporanPending, petugasAktif, verifikasiPending);
         Div main = new Div();
         main.addClassName("ad-main");
-        Div topbar = AdminLayout.buildTopbar("Jadwal Petugas Lapangan");
+        Div topbar = AdminLayout.buildTopbar("Jadwal Petugas Lapangan", notifikasiRepository);
         Div body = new Div();
         body.addClassName("ad-body");
 

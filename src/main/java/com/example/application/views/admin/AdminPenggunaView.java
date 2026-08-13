@@ -1,6 +1,7 @@
 package com.example.application.views.admin;
 
 import com.example.application.model.Pengguna;
+import com.example.application.repository.NotifikasiRepository;
 import com.example.application.repository.PenggunaRepository;
 import com.example.application.views.warga.BlankLayout;
 import com.vaadin.flow.component.UI;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 public class AdminPenggunaView extends Div {
 
     private final PenggunaRepository penggunaRepository;
+    private final NotifikasiRepository notifikasiRepository;
     private List<Pengguna> users;
     private Div tableBody;
     private Span infoText;
@@ -40,8 +42,9 @@ public class AdminPenggunaView extends Div {
     private ComboBox<String> filterStatus;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
-    public AdminPenggunaView(PenggunaRepository penggunaRepository) {
+    public AdminPenggunaView(PenggunaRepository penggunaRepository, NotifikasiRepository notifikasiRepository) {
         this.penggunaRepository = penggunaRepository;
+        this.notifikasiRepository = notifikasiRepository;
         addClassName("ad-root");
 
         long petugasAktif = penggunaRepository.countByStatusAndPeran(Pengguna.Status.AKTIF, Pengguna.Peran.PETUGAS_LAPANGAN);
@@ -51,7 +54,7 @@ public class AdminPenggunaView extends Div {
         Div main = new Div();
         main.addClassName("ad-main");
 
-        Div topbar = AdminLayout.buildTopbar("Pengguna");
+        Div topbar = AdminLayout.buildTopbar("Pengguna", notifikasiRepository);
 
         Div body = new Div();
         body.addClassName("ad-body");
