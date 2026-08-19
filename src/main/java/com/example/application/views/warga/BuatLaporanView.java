@@ -273,6 +273,7 @@ public class BuatLaporanView extends Div implements BeforeEnterObserver {
         upload.setMaxFiles(1);
         upload.setWidthFull();
         upload.addClassName("d-upload-zone");
+        upload.getElement().executeJs("setTimeout(() => { const input = this.shadowRoot.querySelector('input[type=\"file\"]'); if(input) { input.setAttribute('capture', 'environment'); input.setAttribute('accept', 'image/*'); } }, 100);");
 
         Div uploadLabel = new Div();
         uploadLabel.getElement().setProperty("innerHTML",

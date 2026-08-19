@@ -179,6 +179,25 @@ public class ProfilView extends Div {
         Div bigAvatar = new Div();
         bigAvatar.addClassName("pf-big-avatar");
         bigAvatar.add(getAvatarComponent());
+        
+        Div cameraIcon = new Div();
+        cameraIcon.getElement().setProperty("innerHTML", "📷");
+        cameraIcon.getStyle()
+            .set("position", "absolute")
+            .set("bottom", "0")
+            .set("right", "0")
+            .set("background", "#FF5A00")
+            .set("border-radius", "50%")
+            .set("padding", "6px")
+            .set("font-size", "14px")
+            .set("cursor", "pointer")
+            .set("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
+            .set("line-height", "1");
+        
+        bigAvatar.getStyle().set("position", "relative");
+        bigAvatar.add(cameraIcon);
+        bigAvatar.addClickListener(e -> showModal());
+        
         avatarWrapper.add(bigAvatar);
 
         Div nameBlock = new Div();
