@@ -5793,95 +5793,17 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     color: #64748B;
 }
 
-/* ========================================= */
-/* MOBILE RESPONSIVE TWEAKS                  */
-/* ========================================= */
-@media screen and (max-width: 768px) {
-    /* 1. Splash View */
-    .splash-title { font-size: 2rem !important; }
-    .splash-subtitle { font-size: 0.95rem !important; padding: 0 15px; }
-    .splash-icon { width: 80px !important; height: 80px !important; }
-
-    /* 2 & 3. Login & Register Views */
-    .login-split-view {
-        flex-direction: column !important;
-        overflow-y: auto !important;
-    }
-    .login-split-left {
-        width: 100% !important;
-        padding: 40px 20px !important;
-        height: auto !important;
-        min-height: auto !important;
-    }
-    .login-split-right {
-        width: 100% !important;
-        height: auto !important;
-        padding: 20px 10px !important;
-        overflow: visible !important;
-    }
-    .login-split-card, .register-card-wide {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 24px 20px !important;
-        border-radius: 20px !important;
-        box-shadow: none !important;
-        margin-top: 10px !important;
-    }
-    .register-right-scroll {
-        padding: 10px 5px !important;
-    }
-
-    /* 4. Admin Layout */
-    .ad-root {
-        flex-direction: column !important;
-    }
-    .ad-sidebar {
-        width: 100% !important;
-        height: auto !important;
-        min-height: auto !important;
-        padding: 10px 15px !important;
-        flex-direction: row !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        z-index: 1000 !important;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important;
-        border-radius: 20px 20px 0 0 !important;
-    }
-    .ad-logo, .ad-sidebar-footer {
-        display: none !important; 
-    }
-    .ad-nav {
-        flex-direction: row !important;
-        width: 100% !important;
-        justify-content: space-around !important;
-        gap: 0 !important;
-    }
-    .ad-nav-item {
-        flex-direction: column !important;
-        padding: 8px !important;
-        gap: 4px !important;
-        border-radius: 12px !important;
-        align-items: center !important;
-    }
-    .ad-nav-label {
-        font-size: 0.65rem !important;
-    }
-    .ad-nav-icon {
-        margin: 0 !important;
-    }
-    .ad-main {
-        width: 100% !important;
-        height: 100vh !important;
-        padding-bottom: 70px !important; /* space for bottom nav */
-        overflow-y: auto !important;
-    }
-    .ad-topbar {
-        padding: 15px 20px !important;
-    }
-    .ad-body {
+.ld-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.ld-judul {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 0;
 }
 .ld-status-badge {
     font-size: 0.78rem;
@@ -6029,6 +5951,8 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     /* 4. Admin Layout */
     .ad-root {
         flex-direction: column !important;
+        height: 100vh !important;
+        height: 100dvh !important;
     }
     .ad-sidebar {
         width: 100% !important;
@@ -6044,6 +5968,7 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
         z-index: 1000 !important;
         box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important;
         border-radius: 20px 20px 0 0 !important;
+        background: #1a1a2e !important;
     }
     .ad-logo, .ad-sidebar-footer {
         display: none !important; 
@@ -6067,17 +5992,35 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     .ad-nav-icon {
         margin: 0 !important;
     }
+    .ad-nav-active {
+        background: transparent !important;
+    }
+    .ad-nav-active .ad-nav-icon {
+        filter: invert(41%) sepia(93%) saturate(1900%) hue-rotate(345deg) brightness(98%) contrast(101%) !important;
+    }
+    .ad-nav-active .ad-nav-label {
+        color: #FF5A00 !important;
+    }
     .ad-main {
+        flex: 1 !important;
         width: 100% !important;
-        height: 100vh !important;
-        padding-bottom: 70px !important; /* space for bottom nav */
-        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding-bottom: 0 !important;
+        overflow: hidden !important;
     }
     .ad-topbar {
         padding: 15px 20px !important;
     }
     .ad-body {
-        padding: 15px 15px !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 15px 15px 105px 15px !important;
+    }
+    .ad-body > * {
+        flex-shrink: 0 !important;
     }
     .ad-stats-grid, .ad-row-2col, .ad-row-3col {
         flex-direction: column !important;
@@ -6265,5 +6208,169 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     }
     .pf-stats-grid {
         grid-template-columns: 1fr !important;
+    }
+
+    /* ---- 6. Petugas Layout Responsive ---- */
+    .pt-root {
+        flex-direction: column !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        overflow: hidden !important;
+    }
+    .pt-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        padding: 10px 15px !important;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: 1000 !important;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.15) !important;
+        border-radius: 20px 20px 0 0 !important;
+        background: #1A1816 !important;
+    }
+    .pt-logo-row,
+    .pt-profile-box {
+        display: none !important;
+    }
+    .pt-nav {
+        flex-direction: row !important;
+        width: 100% !important;
+        justify-content: space-around !important;
+        gap: 0 !important;
+        flex: unset !important;
+    }
+    .pt-nav-item {
+        flex-direction: column !important;
+        padding: 8px 4px !important;
+        gap: 3px !important;
+        border-radius: 12px !important;
+        align-items: center !important;
+        background: transparent !important;
+        font-size: 0 !important;
+    }
+    .pt-nav-item span {
+        font-size: 0.6rem !important;
+        white-space: nowrap !important;
+        color: #94A3B8 !important;
+    }
+    .pt-nav-item img {
+        width: 22px !important;
+        height: 22px !important;
+    }
+    .pt-nav-active {
+        background: transparent !important;
+    }
+    .pt-nav-active span {
+        color: #FF5A00 !important;
+    }
+    .pt-nav-active img {
+        filter: invert(41%) sepia(93%) saturate(1900%) hue-rotate(345deg) brightness(98%) contrast(101%) !important;
+    }
+    .pt-main {
+        flex: 1 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    .pt-topbar {
+        padding: 0 20px !important;
+        height: 56px !important;
+    }
+    .pt-topbar-title {
+        font-size: 1.1rem !important;
+    }
+    .pt-body {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 20px 16px 105px 16px !important;
+    }
+    .pt-body > * {
+        flex-shrink: 0 !important;
+    }
+    .pt-job-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .pt-job-card {
+        max-width: 100% !important;
+    }
+    .pt-detail-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    .pt-detail-image {
+        height: 200px !important;
+    }
+
+    /* --- Petugas Profil Page --- */
+    .pt-profile-header-card {
+        margin-bottom: 16px !important;
+    }
+    .pt-profile-banner {
+        height: 90px !important;
+    }
+    .pt-profile-info-row {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 0 20px 24px !important;
+        gap: 12px !important;
+    }
+    /* leftGroup (avatar + text) goes vertical on mobile */
+    .pt-profile-info-row > div:first-child {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    /* avatar wrapper: pull it up over the banner */
+    .pt-profile-info-row > div:first-child > div:first-child {
+        margin-top: -46px !important;
+    }
+    .pt-profile-display-name {
+        font-size: 1.25rem !important;
+        text-align: center !important;
+    }
+    .pt-profile-display-loc {
+        justify-content: center !important;
+    }
+    /* the 2-col grid (settings + stats) becomes 1-col */
+    .pt-body > div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .pt-settings-card,
+    .pt-stats-card {
+        width: 100% !important;
+        padding: 20px !important;
+    }
+    .pt-stats-row {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .pt-stat-box {
+        width: 100% !important;
+    }
+
+    /* --- Selesaikan Tugas Page --- */
+    /* The form card has hard-coded inline max-width:700px & padding:32px */
+    .pt-body > div[style*="max-width"] {
+        padding: 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    /* user-dialog-footer becomes column so buttons stack */
+    .user-dialog-footer {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .user-dialog-footer .user-dialog-cancel-btn,
+    .user-dialog-footer .pt-btn-kirim {
+        width: 100% !important;
     }
 }

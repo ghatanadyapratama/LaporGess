@@ -131,10 +131,11 @@ public class PetugasSelesaikanView extends Div implements BeforeEnterObserver {
                 UI.getCurrent().access(() -> uploadStatus.setText("❌ Gagal upload: " + ex.getMessage()));
             }
         });
-        upload.setAcceptedFileTypes("image/jpeg", "image/png");
+        upload.setAcceptedFileTypes("image/*");
         upload.setMaxFileSize(5 * 1024 * 1024);
         upload.setMaxFiles(1);
         upload.setWidthFull();
+        upload.getElement().executeJs("setTimeout(() => { const input = this.shadowRoot.querySelector('input[type=\"file\"]'); if(input) { input.setAttribute('capture', 'environment'); input.setAttribute('accept', 'image/*'); } }, 100);");
         upload.setUploadButton(new Button("📷 Pilih Foto Bukti"));
         upload.setDropLabel(new Span("Atau seret foto ke sini"));
 
